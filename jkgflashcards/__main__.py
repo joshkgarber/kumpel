@@ -2,7 +2,7 @@ import csv
 import os
 import time
 import random
-from jkgflashcards.modules.helpers import message_user, choose_cardset, countdown, exit_program, ai_checker, get_recorded_answer,
+from jkgflashcards.modules.helpers import message_user, choose_cardset, countdown, exit_program, ai_checker, get_recorded_answer
 
 spec = {
     'cards': [],
@@ -150,5 +150,5 @@ def in_game_display(tally, n):
     print()
     print()
 
-
-main()
+if __name__ == '__main__':
+    main()
