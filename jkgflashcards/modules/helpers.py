@@ -10,10 +10,30 @@ from openai import OpenAI
 import io
 
 
+window_width = 100
 def message_user(msg):
-    window_width = 100
     print(textwrap.fill(msg, width=window_width))
+    return
 
+
+def choose_mode(spec):
+    message_user('Please choose a mode from the list.')
+    print()
+    message_user('1) Learn')
+    message_user('2) Practice')
+    print()
+    message_user('Reply with the mode number.')
+    print()
+    mode_name = ''
+    while not mode_name:
+        mode_number = input()
+        if mode_number in ['1','2']:
+            mode_name = 'learn' if mode_number == '1' else 'practice'
+        else:
+            message_user('Please enter a valid mode number')
+    spec['mode'][0] = mode_name
+    print()
+    return
 
 def countdown(m, s):
     while s > 0:
@@ -28,7 +48,7 @@ def exit_program():
     print()
     countdown("The program will end", 5)
     print()
-    print("Goodbye!")
+    message_user("Goodbye!")
     time.sleep(1)
     os.system("clear")
     exit(0)
@@ -41,7 +61,7 @@ def choose_cardset(spec):
     
     # Show the options to the user
     for row in spec['cardsets']:
-        print(f'{row["number"]}) {row["name"]}')
+        message_user(f'{row["number"]}) {row["name"]}')
     print() 
 
     # Ask the user for their choice of cardset
@@ -78,6 +98,9 @@ def choose_cardset(spec):
             spec['cardset_id'] = cardset_id
             os.system('clear')
     return
+
+
+def show_instructions(spec):
 
 
 def record_audio(recording, is_recording, samplerate, channels, dtype):

@@ -2,13 +2,14 @@ import csv
 import os
 import time
 import random
-from jkgflashcards.modules.helpers import message_user, choose_cardset, countdown, exit_program, ai_checker, get_recorded_answer
+from jkgflashcards.modules.helpers import message_user, choose_cardset, countdown, exit_program, ai_checker, get_recorded_answer, choose_mode, show_instructions
 
 spec = {
     'cards': [],
     'cardsets': [],
     'cardset_id': 0,
-    'cardset': []
+    'cardset': [],
+    'mode': []
 }
 
 with open('cards.csv', mode='r', newline='', encoding='utf-8') as cards_csv:
@@ -23,14 +24,10 @@ with open('cardsets.csv', mode='r', newline='', encoding='utf-8') as cardsets_cs
 
 def main():
     os.system('clear')
-    
-    message_user("Welcome!")
-    print()
-    message_user("This is the business analysis flashcard learning program.")
-    print()
-    
+    message_user("Welcome to flashcards!")
+    choose_mode(spec)
     choose_cardset(spec)
-    
+    show_instructions(spec)
     
     print("How it works:")
     print()
