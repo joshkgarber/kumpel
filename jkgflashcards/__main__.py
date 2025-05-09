@@ -19,7 +19,7 @@ with open('cards.csv', mode='r', newline='', encoding='utf-8') as cards_csv:
 
 with open('cardsets.csv', mode='r', newline='', encoding='utf-8') as cardsets_csv:
     cardsets_csv_reader = csv.DictReader(cardsets_csv)
-    spec['cardsets'] = [row for row in cardsets_csv_reader if int(row['id']) > 2]
+    spec['cardsets'] = [row for row in cardsets_csv_reader]
 
 
 def main():
