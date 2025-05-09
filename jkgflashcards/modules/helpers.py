@@ -31,7 +31,11 @@ def choose_mode(spec):
             mode_name = 'learn' if mode_number == '1' else 'practice'
         else:
             message_user('Please enter a valid mode number')
-    spec['mode'][0] = mode_name
+    if len(spec['mode']) == 1:
+        spec['mode'][0] = mode_name
+    else:
+        spec['mode'].append(mode_name)
+
     print()
     return
 
@@ -101,6 +105,18 @@ def choose_cardset(spec):
 
 
 def show_instructions(spec):
+    mode = spec['mode'][0]
+    message_user('How it works:')
+    print()
+    if mode == 'learn':
+        message_user('You will be shown the fronts and backs of each card in turn. You have to respond with the back content.')
+    elif mode == 'practice':
+        message_user('You will be shows the fronts of each card in turn. You have to respond with the back content.')
+    print()
+    message_user('If you get one wrong, you have to reattempt it until you get it right.')
+    print()
+    input('Hit Enter to continue.')
+    return
 
 
 def record_audio(recording, is_recording, samplerate, channels, dtype):
@@ -108,7 +124,25 @@ def record_audio(recording, is_recording, samplerate, channels, dtype):
         while is_recording[0]:
             audio_chunk, _ = stream.read(1024)
             recording.append(audio_chunk)
-    
+
+
+def get_input_mode():
+    message_user('Would you like to type or record your answer?')
+    print()
+    message_user('1) Type')
+    message_user('2) Record')
+    print()
+    message_user('Reply with the choice number.')
+    print()
+    mode_name = ''
+    while not mode_name:
+        mode_number = input()
+        if mode_number in ['1','2']:
+            mode_name = 'type' if mode_number == '1' else 'record'
+        else:
+            message_user('Please enter a valid choice number')
+    return mode_name
+
 
 def get_recorded_answer():
     '''adapted from ~/developing-audio-recording/with_ai_transcription.py'''
@@ -144,7 +178,7 @@ def get_recorded_answer():
         file=wav_buffer
     )
 
-    print('Transcription completed:', transcription.text)
+    print('Transcription completed:\n', transcription.text)
     print()
     return transcription.text
 

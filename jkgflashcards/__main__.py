@@ -2,7 +2,7 @@ import csv
 import os
 import time
 import random
-from jkgflashcards.modules.helpers import message_user, choose_cardset, countdown, exit_program, ai_checker, get_recorded_answer, choose_mode, show_instructions
+from jkgflashcards.modules.helpers import message_user, choose_cardset, countdown, exit_program, ai_checker, get_recorded_answer, choose_mode, show_instructions, get_input_mode
 
 spec = {
     'cards': [],
@@ -28,15 +28,7 @@ def main():
     choose_mode(spec)
     choose_cardset(spec)
     show_instructions(spec)
-    
-    print("How it works:")
-    print()
-    message_user('You will be shown the fronts and backs of each card in turn. You have to write the back content and then hit Enter to submit your answer.')
-    print()
-    message_user('If you get one wrong, you have to reattempt it until you get it right.')
-    print()
-    input("Hit Enter to continue.")
-    os.system("clear")
+    os.system('clear')
 
 
     shuffle = ""
@@ -69,7 +61,7 @@ def main():
     
     start_time = time.time()
     while len(tally["corrects"]) != len(spec['cardset']):
-        learn(spec['cardset'], tally)
+        run_session(spec['cardset'], tally)
     end_time = time.time()
     os.system('clear')
     print("Well done! You got them all right!")
@@ -96,7 +88,7 @@ def main():
             exit_program()
 
 
-def learn(cardset, tally):
+def run_session(cardset, tally):
     # to_redo = []
     for card in cardset:
         front = card['front']
@@ -105,12 +97,17 @@ def learn(cardset, tally):
             in_game_display(tally, len(spec['cardset']))
             message_user(front)
             print()
-            message_user(back)
-            print()
+            if spec['mode'][0] == 'learn':
+                message_user(back)
+                print()
             correct = False
             while not correct:
-                input('Hit Enter to start recording your answer.')
-                answer = get_recorded_answer()
+                input_mode = get_input_mode()
+                if input_mode == 'record':
+                    input('Hit Enter to start recording your answer.')
+                    answer = get_recorded_answer()
+                elif input_mode == 'type':
+                    answer = input('Your answer: ')
                 print('\nChecking answer... ', end='\a')
                 ai_response = ai_checker(answer, front, back)
                 if ai_response['success']:
