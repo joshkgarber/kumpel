@@ -9,7 +9,8 @@ spec = {
     'cardsets': [],
     'cardset_id': 0,
     'cardset': [],
-    'mode': []
+    'mode': [],
+    'input_mode': []
 }
 
 with open('cards.csv', mode='r', newline='', encoding='utf-8') as cards_csv:
@@ -27,6 +28,8 @@ def main():
     message_user("Welcome to flashcards!")
     choose_mode(spec)
     choose_cardset(spec)
+    get_input_mode(spec)
+    os.system('clear')
     show_instructions(spec)
     os.system('clear')
 
@@ -102,7 +105,7 @@ def run_session(cardset, tally):
                 print()
             correct = False
             while not correct:
-                input_mode = get_input_mode()
+                input_mode = spec['input_mode'][0]
                 if input_mode == 'record':
                     input('Hit Enter to start recording your answer.')
                     answer = get_recorded_answer()

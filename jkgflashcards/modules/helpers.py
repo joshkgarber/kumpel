@@ -126,7 +126,7 @@ def record_audio(recording, is_recording, samplerate, channels, dtype):
             recording.append(audio_chunk)
 
 
-def get_input_mode():
+def get_input_mode(spec):
     message_user('Would you like to type or record your answer?')
     print()
     message_user('1) Type')
@@ -141,7 +141,11 @@ def get_input_mode():
             mode_name = 'type' if mode_number == '1' else 'record'
         else:
             message_user('Please enter a valid choice number')
-    return mode_name
+    if len(spec['input_mode']) == 1:
+        spec['input_mode'][0] = mode_name
+    else:
+        spec['input_mode'].append(mode_name)
+    return
 
 
 def get_recorded_answer():
