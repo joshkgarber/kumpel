@@ -2,7 +2,7 @@ import csv
 import os
 import time
 import random
-from jkgflashcards.modules.helpers import message_user, choose_cardset, countdown, exit_program, ai_checker, get_recorded_answer, choose_mode, show_instructions, get_input_mode
+from .helpers import message_user, choose_cardset, countdown, exit_program, ai_checker, get_recorded_answer, choose_mode, show_instructions, get_input_mode
 
 spec = {
     'cards': [],
@@ -104,7 +104,11 @@ def run_session(cardset, tally):
                 message_user(back)
                 print()
             correct = False
+            attempts = 0
             while not correct:
+                if spec['mode'][0] == 'practice' and attempts > 4:
+                    message_user(f'Correct answer: {back}')
+                    print()
                 input_mode = spec['input_mode'][0]
                 if input_mode == 'record':
                     input('Hit Enter to start recording your answer.')
@@ -121,9 +125,10 @@ def run_session(cardset, tally):
                     else:
                         print('Incorrect.\n')
                         correct = False
+                        attempts += 1
                 else:
                     print(ai_response['error'])
-                if not correct:
+                if not correct and ai_response['success']:
                     if front not in tally["incorrects"]:
                         tally['incorrects'].append(card['front'])
                 else:
