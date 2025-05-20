@@ -80,28 +80,9 @@ def choose_cardset(spec):
                 cardset_name = row['name']
         if not cardset_id:
             message_user('Please enter a valid cardset number.')
-    print()
-
-    # Confirm the choice of cardset with the user
+    spec['cardset_id'] = cardset_id
     os.system('clear')
-    message_user(f'You chose the cardset "{cardset_name}".')
     print()
-    message_user('Reply with "ok" to proceed or "back" to go back. Reply with "exit" to exit the program.')
-    print()
-    response = ''
-    while not response:
-        response = input()
-        if response == 'exit':
-            exit_program()
-        elif response == 'back':
-            os.system('clear')
-            choose_cardset(spec)
-        elif response != 'ok':
-            response = ''
-        else:
-            spec['cardset_id'] = cardset_id
-            os.system('clear')
-    return
 
 
 def show_instructions(spec):
