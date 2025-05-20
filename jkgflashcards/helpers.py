@@ -28,16 +28,22 @@ def choose_mode(spec):
     while not mode_name:
         mode_number = input()
         if mode_number in ['1','2']:
-            mode_name = 'learn' if mode_number == '1' else 'practice'
+            if mode_number == '1':
+                mode_name = 'learn'
+            else:
+                mode_name = 'practice'
         else:
             message_user('Please enter a valid mode number')
-    if len(spec['mode']) == 1:
-        spec['mode'][0] = mode_name
-    else:
-        spec['mode'].append(mode_name)
-
+    set_mode(spec, mode_name)
+    if mode_name == 'learn':
+        get_learn_repeats(spec)
     print()
     return
+
+
+def set_mode(spec, name):
+    spec.mode = name 
+
 
 def countdown(m, s):
     while s > 0:
@@ -64,7 +70,7 @@ def choose_cardset(spec):
     print()
     
     # Show the options to the user
-    for row in spec['cardsets']:
+    for row in spec.cardsets:
         message_user(f'{row["number"]}) {row["name"]}')
     print() 
 
@@ -74,19 +80,19 @@ def choose_cardset(spec):
     print()
     while not cardset_id: 
         cardset_number = input()
-        for row in spec['cardsets']:
+        for row in spec.cardsets:
             if row['number'] == cardset_number:
                 cardset_id = row['id']
                 cardset_name = row['name']
         if not cardset_id:
             message_user('Please enter a valid cardset number.')
-    spec['cardset_id'] = cardset_id
+    spec.cardset_id = cardset_id
     os.system('clear')
     print()
 
 
 def show_instructions(spec):
-    mode = spec['mode'][0]
+    mode = spec.mode
     message_user('How it works:')
     print()
     if mode == 'learn':
@@ -122,10 +128,7 @@ def get_input_mode(spec):
             mode_name = 'type' if mode_number == '1' else 'record'
         else:
             message_user('Please enter a valid choice number')
-    if len(spec['input_mode']) == 1:
-        spec['input_mode'][0] = mode_name
-    else:
-        spec['input_mode'].append(mode_name)
+    spec.input_mode = mode_name
     return
 
 
@@ -198,3 +201,12 @@ def ai_checker(answer, front, back):
     except Exception as e:
         return dict(success=False, error=f"Error: {str(e)}")
 
+
+def get_learn_repeats(spec):
+    print()
+    repeats = ''
+    while not repeats.isdigit():
+        message_user('How many times would you like to work each card?')
+        print()
+        repeats = input('Enter a number: ')
+    spec.learn_repeats = int(repeats)
