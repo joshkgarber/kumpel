@@ -67,15 +67,15 @@ def main():
        
         if len(results['incorrects']) > 0:       
             redo_incorrects = ''
-            while redo_incorrects not in ['y', 'n'] and len(results['incorrects']) > 0:
+            while redo_incorrects not in ['y', 'n']:
                 redo_incorrects = input('Would you to redo the ones you got wrong? (y/n): ')
                 if redo_incorrects == 'y':
                     spec.cardset = results['incorrects']
                     print()
                 elif redo_incorrects == 'n':
-                    break
+                    return
         else:
-            break
+            return
 
 
 def run_session(spec):
