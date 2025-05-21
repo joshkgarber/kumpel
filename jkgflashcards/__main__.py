@@ -72,6 +72,8 @@ def main():
                 if redo_incorrects == 'y':
                     spec.cardset = results['incorrects']
                     print()
+                elif redo_incorrects == 'n':
+                    break
         else:
             break
 
