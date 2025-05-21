@@ -107,7 +107,7 @@ def run_session(spec):
                             answer = get_recorded_answer()
                         elif input_mode == 'type':
                             answer = ''
-                            while not answer and not answer.isspace():
+                            while not answer and answer.isspace():
                                 answer = input('Your answer: ')
                         print('\nChecking answer... ', end='\a')
                         ai_response = ai_checker(answer, front, back)
