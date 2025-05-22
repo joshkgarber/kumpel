@@ -2,7 +2,7 @@ import csv
 import os
 import time
 import random
-from .helpers import message_user, choose_cardset, countdown, exit_program, ai_checker, get_recorded_answer, choose_mode, show_instructions, get_input_mode
+from .helpers import message_user, choose_cardset, countdown, exit_program, ai_checker, get_recorded_answer, choose_mode, show_instructions, get_input_mode, exact_checker, get_check_mode
 
 class Spec():
     def __init__(self):
@@ -11,6 +11,7 @@ class Spec():
         self.cardset_id = int()
         self.cardset = list()
         self.mode = str()
+        self.check_mode = str()
         self.input_mode = str()
         self.learn_repeats = 1
         self.load_cards()
@@ -31,8 +32,12 @@ def main():
     spec = Spec()
     os.system('clear')
     choose_mode(spec)
+    os.system('clear')
     choose_cardset(spec)
+    os.system('clear')
     get_input_mode(spec)
+    os.system('clear')
+    get_check_mode(spec)
     os.system('clear')
     show_instructions(spec)
     os.system('clear')
@@ -81,6 +86,7 @@ def main():
 def run_session(spec):
     mode = spec.mode
     cardset = spec.cardset
+    check_mode = spec.check_mode
     tally = dict(corrects=list(), incorrects=list())
     countdown('The session will start', 5)
     start_time = time.time()
@@ -111,10 +117,14 @@ def run_session(spec):
                             answer = ''
                             while not answer or answer.isspace():
                                 answer = input('Your answer: ')
-                        print('\nChecking answer... ', end='\a')
-                        ai_response = ai_checker(answer, front, back)
-                        if ai_response['success']:
-                            if ai_response['result'] == 'correct':
+                                print()
+                        if check_mode == 'ai':
+                            print('Checking answer... ', end='\a')
+                            check = ai_checker(answer, front, back)
+                        else:
+                            check = exact_checker(answer, back)
+                        if check['success']:
+                            if check['result'] == 'correct':
                                 correct = True
                                 print('Correct!')
                                 learn_repeats -= 1
@@ -130,7 +140,7 @@ def run_session(spec):
                                 if card not in tally["incorrects"]:
                                     tally['incorrects'].append(card)
                         else:
-                            print(ai_response['error'])
+                            print(check['error'])
 
 
     

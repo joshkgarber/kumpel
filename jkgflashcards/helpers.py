@@ -16,7 +16,7 @@ def message_user(msg):
     return
 
 
-def choose_mode(spec):
+def choose_mode(spec): 
     message_user('Please choose a mode from the list.')
     print()
     message_user('1) Learn')
@@ -172,7 +172,7 @@ def get_recorded_answer():
 
 
 def ai_checker(answer, front, back):
-    instructions = f'Your role is to provide feedback to the user as part of a learning system which utilizes flashcards. The user has been shown the front of the card, and will attempt to provide the back. The front of the card is "{front}". The true back of the card is "{back}". Be extremely strict with the assessment of the user\'s answer. The user MUST cover EVERY facet of the back content in their answer. They may use different words, have spelling mistakes, and use different grammatical constructs, but the content of their answer must cover the meaning of card back in to the utmost extent. Output only one word: either "correct" or "incorrect".' 
+    instructions = f'Your role is to provide feedback to the user as part of a learning system which utilizes flashcards. The user has been shown the front of the card, and will attempt to provide the back. The front of the card is "{front}". The true back of the card is "{back}". Be very strict with the assessment of the user\'s answer. The user MUST cover EVERY facet of the back content in their answer. They may use different words, have spelling mistakes, and use different grammatical constructs, but the content of their answer must cover the meaning of card back in to the utmost extent. Output only one word: either "correct" or "incorrect".' 
     system = [
         {
             'type': 'text',
@@ -202,6 +202,11 @@ def ai_checker(answer, front, back):
         return dict(success=False, error=f"Error: {str(e)}")
 
 
+def exact_checker(answer, back):
+    if answer == back:
+        return dict(success=True, result='correct')
+    return dict(success=True, result='incorrect')
+
 def get_learn_repeats(spec):
     print()
     repeats = ''
@@ -210,3 +215,34 @@ def get_learn_repeats(spec):
         print()
         repeats = input('Enter a number: ')
     spec.learn_repeats = int(repeats)
+
+
+def get_check_mode(spec): 
+    message_user('Would you like AI or exact-matching for the checks?')
+    print()
+    message_user('1) AI')
+    message_user('2) Exact Match')
+    print()
+    message_user('Reply with the mode number.')
+    print()
+    mode_name = ''
+    while not mode_name:
+        mode_number = input()
+        if mode_number in ['1','2']:
+            if mode_number == '1':
+                mode_name = 'ai'
+            else:
+                mode_name = 'exact'
+        else:
+            message_user('Please enter a valid mode number')
+    set_check_mode(spec, mode_name)
+    return
+
+
+def set_mode(spec, name):
+    spec.mode = name 
+
+
+
+def set_check_mode(spec, name):
+    spec.check_mode = name 
