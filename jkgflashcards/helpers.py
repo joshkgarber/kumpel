@@ -208,7 +208,7 @@ def exact_checker(answer, back):
     return dict(success=True, result='incorrect')
 
 def get_learn_repeats(spec):
-    print()
+    os.system('clear')
     repeats = ''
     while not repeats.isdigit():
         message_user('How many times would you like to work each card?')

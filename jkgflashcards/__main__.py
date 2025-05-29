@@ -60,7 +60,7 @@ def main():
         results = run_session(spec)
 
         if len(results['incorrects']) == 0:
-            print('Well done! You got them all right!')
+            print('Congratulations! You completed the cardset!')
             print()
 
         print(f"Learning time: {results['duration']} seconds.")
@@ -95,18 +95,20 @@ def run_session(spec):
             learn_repeats = spec.learn_repeats
             front = card['front']
             back = card['back']
-            while learn_repeats > 0:
+            while learn_repeats > -1:
                 if card not in tally['corrects']:
                     in_game_display(tally, len(cardset))
+                    if mode == 'learn' and learn_repeats == 0:
+                        countdown('You\'re doing great! You\'re gonna try on your own', 5)
                     message_user(front)
                     print()
-                    if mode == 'learn':
+                    if mode == 'learn' and learn_repeats > 0:
                         message_user(back)
                         print()
                     correct = False
                     attempts = 0
                     while not correct:
-                        if mode == 'practice' and attempts > 4:
+                        if attempts > 4:
                             message_user(f'Correct answer: {back}')
                             print()
                         input_mode = spec.input_mode
@@ -130,9 +132,13 @@ def run_session(spec):
                             if check['result'] == 'correct':
                                 correct = True
                                 print('Correct!')
+                                if mode == 'practice':
+                                    learn_repeats -= 1
                                 learn_repeats -= 1
                                 if mode == 'learn':
-                                    if learn_repeats == 0:
+                                    if learn_repeats == -1:
+                                        print()
+                                        print('You did it! Well done!')
                                         tally["corrects"].append(card)
                                 elif mode == 'practice':
                                     tally["corrects"].append(card)
