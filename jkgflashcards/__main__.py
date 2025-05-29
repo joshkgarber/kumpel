@@ -124,6 +124,9 @@ def run_session(spec):
                         else:
                             check = exact_checker(answer, back)
                         if check['success']:
+                            result_text = check['result']
+                            result_text_clean = ''.join(e for e in result_text if e.isalnum())
+                            result_text_clean_lower = result_text_clean.lower()
                             if check['result'] == 'correct':
                                 correct = True
                                 print('Correct!')
