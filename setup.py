@@ -1,15 +1,15 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='jkgflashcards',
+    name='kumpel',
     version='0.0.1',
     packages=find_packages(),
     description='A terminal-based flashcard program.',
-    author='Joshua Kampel Garber',
+    author='Josh Garber',
     author_email='dev@jkgarber.com',
     entry_points={
         'console_scripts': [
-            'jkgflashcards=jkgflashcards.__main__:main'
+            'kumpel=kumpel.__main__:main'
         ]
     },
     install_requires=[
