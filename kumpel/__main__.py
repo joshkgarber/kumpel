@@ -180,7 +180,7 @@ def in_game_display(tally, n):
 
 # if __name__ == '__main__':
 os.system('clear')
-message_user("Welcome to flashcards!")
+message_user("Welcome to kumpel!")
 print()
 input('Hit Enter to start.')
 while True:
