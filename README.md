@@ -32,6 +32,7 @@ It costs approximately $X.XX to complete a session with Kumpel. Here's the calcu
 Python packages will be installed into a new venv:
 
 - google-genai
+- python-dotenv
 - scipy
 - souddevice
 
