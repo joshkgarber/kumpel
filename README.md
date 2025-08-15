@@ -29,7 +29,7 @@ It costs approximately $X.XX to complete a session with Kumpel. Here's the calcu
 - [sqlite3](https://sqlite.org/index.html)
 - python>=3.10
 
-Python packages will be installed into a new venv:
+The following Python packages will be installed automatically into a new venv:
 
 - google-genai
 - python-dotenv
