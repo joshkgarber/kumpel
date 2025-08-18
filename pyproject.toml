@@ -1,7 +1,7 @@
 [project]
 name = "kumpel"
 version = "0.1.0"
-description = "Add your description here"
+description = "LLM-assisted flashcard-based German language learning utility."
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = []
