@@ -1,8 +1,14 @@
 import os
 import re
+from dotenv import load_dotenv
 
 
 def main():
+    load_dotenv()
+    api_key = os.environ.get("KUMPEL_GEMINI_API_KEY")
+    if not api_key:
+        raise ValueError("Missing API key. Add KUMPEL_GEMINI_API_KEY to kumpel/.env e.g. KUMPEL_GEMINI_API_KEY=your_api_key")
+
     os.system("clear");
     print("Hello from Kumpel!\n")
     level = get_german_level()
