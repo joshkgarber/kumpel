@@ -8,6 +8,7 @@ def main():
     level = get_german_level()
     os.system("clear")
     topic = get_user_topic()
+    print(f"topic: {topic}")
 
 
 def get_german_level():
@@ -32,7 +33,17 @@ def get_user_topic():
 2. No -> the LLM can decide."""
     pattern = r"^[1, 2]$"
     invalid_message = "Respond with 1 for yes or 2 for no."
-    return get_user_input(message, pattern, invalid_message)
+    user_input = get_user_input(message, pattern, invalid_message)
+    if user_input == "2":
+        return None
+    message = """
+Which topics and/or themes would you like to cover in the session?
+
+Respond in one line (140 characters max)."""
+    pattern = r"^.{1,140}$"
+    invalid_message = "Your answer must be in one line and 1 to 140 characters long."
+    user_input = get_user_input(message, pattern, invalid_message)
+    return user_input
 
 
 def get_user_input(message, pattern, invalid_message):
