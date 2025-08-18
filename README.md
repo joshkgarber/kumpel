@@ -26,7 +26,6 @@ It costs approximately $X.XX to complete a session with Kumpel. Here's the calcu
 
 - Linux (or WSL) or MacOS
 - [uv](https://docs.astral.sh/uv/)
-- [sqlite3](https://sqlite.org/index.html)
 - python>=3.10
 
 The following Python packages will be installed automatically into a new venv:
