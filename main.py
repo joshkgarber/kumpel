@@ -12,7 +12,9 @@ def main():
     style = get_particular_style()
     os.system("clear")
     output_medium = get_output_medium()
-    print(f"output_medium: {output_medium}")
+    os.system("clear")
+    input_medium = get_input_medium()
+    print(f"input_medium: {input_medium}")
 
 
 def get_german_level():
@@ -82,6 +84,16 @@ def get_output_medium():
 3. Both"""
     pattern = r"^[1,2,3]$"
     invalid_message = "Respond with 1, 2, or 3."
+    user_input = get_user_input(message, pattern, invalid_message)
+    return user_input
+
+
+def get_input_medium():
+    message = """Do you want to type or speak your answers?\n
+1. Type
+2. Speak"""
+    pattern = r"^[1,2]$"
+    invalid_message = "Respond with 1 or 2."
     user_input = get_user_input(message, pattern, invalid_message)
     return user_input
 
