@@ -14,7 +14,9 @@ def main():
     output_medium = get_output_medium()
     os.system("clear")
     input_medium = get_input_medium()
-    print(f"input_medium: {input_medium}")
+    os.system("clear")
+    model_choice = get_model_choice()
+    print(f"model_choice: {model_choice}")
 
 
 def get_german_level():
@@ -96,6 +98,16 @@ def get_input_medium():
     invalid_message = "Respond with 1 or 2."
     user_input = get_user_input(message, pattern, invalid_message)
     return user_input
+
+
+def get_model_choice():
+    message = """Which model would you like to use?\n
+1. Gemini 2.5 Pro
+2. Gemini 2.5 Flash
+3. Gemini 2.5 Flash-Lite"""
+    pattern = r"^[1,2,3]$"
+    invalid_message = "Respond with 1, 2, or 3."
+    return get_user_input(message, pattern, invalid_message)
 
 
 def get_user_input(message, pattern, invalid_message):
