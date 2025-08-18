@@ -10,7 +10,9 @@ def main():
     topic = get_user_topic()
     os.system("clear")
     style = get_particular_style()
-    print(f"style: {style}")
+    os.system("clear")
+    output_medium = get_output_medium()
+    print(f"output_medium: {output_medium}")
 
 
 def get_german_level():
@@ -58,7 +60,7 @@ For example:
 - Ancient mythology and biblical\n
 1. Yes -> I'll decide.
 2. No -> the LLM can decide."""
-    pattern = r"^[1, 2]$"
+    pattern = r"^[1,2]$"
     invalid_message = "Respond with 1 for yes or 2 for no."
     user_input = get_user_input(message, pattern, invalid_message)
     if user_input == "2":
@@ -69,6 +71,17 @@ Which style or genre would you like to request?
 Respond in one line (140 characters max)."""
     pattern = r"^.{1,140}$"
     invalid_message = "Your answer must be in one line and 1 to 140 characters long."
+    user_input = get_user_input(message, pattern, invalid_message)
+    return user_input
+
+
+def get_output_medium():
+    message = """Do you want to read or hear the text? Or both?\n
+1. Read
+2. Hear
+3. Both"""
+    pattern = r"^[1,2,3]$"
+    invalid_message = "Respond with 1, 2, or 3."
     user_input = get_user_input(message, pattern, invalid_message)
     return user_input
 
