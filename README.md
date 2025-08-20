@@ -6,9 +6,7 @@ This project utilizes the Google Generative Language API (Gemini API). You need 
 
 ## What is Kumpel?
 
-Kumpel is a terminal-based program which helps you to understand written German texts. It's a guided learning experience consisting of back-and-forth conversational style content.
-
-It's not intended to be a complete solution to learning German as it focuses on one aspect of language learning - reading (comprehension). The aim is to improve the user's ability to understand German texts in written form. You can also use it to practice listening and speaking to some extent, but it's not the primary purpose of the app.
+Kumpel is a terminal-based program which helps you to understand written German texts. It's a guided learning experience consisting of back-and-forth conversational style content. It's not intended to be a complete solution to learning German as it focuses on one aspect of language learning - reading (comprehension).
 
 ## Why use Kumpel?
 
@@ -20,7 +18,7 @@ It costs approximately $X.XX to complete a session with Kumpel. Here's the calcu
 
 (calculation goes here)
 
-## Installation
+## Quickstart
 
 **Requirements**
 
@@ -32,11 +30,14 @@ The following Python packages will be installed automatically into a new venv:
 
 - google-genai
 - python-dotenv
-- scipy
-- souddevice
 
 **Steps**
 
 1. Create a new Gemini API Key (to track costs separately)
-2. Clone the repository
+2. Clone the repository: `git clone https://github.com/joshkgarber/kumpel.git`
 3. Create a `.env` file for the API key containing `KUMPEL_GEMINI_API_KEY="your_api_key"`
+4. Run the program with `uv run main.py`
+
+## Command-line Config
+
+You can pre-configure the session using command-line arguments. This bypasses the series of questions at the beginning.
