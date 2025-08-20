@@ -198,6 +198,7 @@ def conduct_session(spec):
 
 
 def get_story_json(spec):
+    print("Generating story...\n")
     system_instruction = "You are a German storyteller. Your purpose is to provide a story which will help the user learn German."
     contents = get_prompt_contents(spec)
     client = genai.Client(api_key=spec["api_key"])
@@ -211,6 +212,7 @@ def get_story_json(spec):
         contents=contents,
     )
     story: Story = response.parsed
+    os.system("clear")
     return story
 
 
