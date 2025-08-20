@@ -16,6 +16,11 @@ class Story(BaseModel):
     sentences: list[StorySentence]
 
 
+class Feedback(BaseModel):
+    correct: bool
+    feedback: str
+
+
 def main():
     load_dotenv()
     api_key = os.environ.get("KUMPEL_GEMINI_API_KEY")
@@ -39,34 +44,31 @@ def main():
 
 def get_german_level():
     message = """What is your level of German?\n
-1. Complete beginner
-2. Before A1
-3. A1
-4. A2
-5. B1
-6. B2
-7. C1
-8. C2\n
+1. Before A1
+2. A1
+3. A2
+4. B1
+5. B2
+6. C1
+7. C2\n
 Respond with the number for your selection."""
-    pattern = r"^[1,2,3,4,5,6,7,8]$"
-    invalid_message = "Answer must be a number from 1 to 8."
+    pattern = r"^[1,2,3,4,5,6,7]$"
+    invalid_message = "Answer must be a number from 1 to 7."
     level = get_user_input(message, pattern, invalid_message)
     match level:
         case "1":
-            return "complete beginner"
-        case "2":
             return "below A1"
-        case "3":
+        case "2":
             return "A1"
-        case "4":
+        case "3":
             return "A2"
-        case "5":
+        case "4":
             return "B1"
-        case "6":
+        case "5":
             return "B2"
-        case "7":
+        case "6":
             return "C1"
-        case "8":
+        case "7":
             return "C2"
         case _:
             raise Exception("Unsupported input value for German level")
@@ -154,18 +156,43 @@ def validate_input(user_input, pattern, invalid_message):
 
 def conduct_session(spec):
     story = get_story_json(spec)
+    german_sentences = [sentence.german for sentence in story.sentences]
+    german_story_string = " ".join(german_sentences)
     for sentence in story.sentences:
         for i in range(2):
-            answer = None
+            passed = False
             print(sentence.german)
             print(sentence.english)
-            while answer != sentence.english:
+            while not passed:
                 answer = input("\n")
+                feedback = check_answer(sentence.german, answer, german_story_string, spec)
+                if feedback.correct:
+                    print("\nCorrect!")
+                    passed = True
+                else:
+                    print("\nIncorrect.\n")
+                    print(feedback.feedback)
+                if passed:
+                    input("\nHit Enter to proceed. ")
+                else:
+                    print("\nTry again!")
             os.system("clear")
-        answer = None
+        passed = False
         print(sentence.german)
-        while answer != sentence.english:
+        while not passed:
             answer = input()
+            feedback = check_answer(sentence.german, answer, german_story_string, spec)
+            if feedback.correct:
+                print("\nCorrect!\n")
+                print(feedback.feedback)
+                passed = True
+            else:
+                print("\nIncorrect.\n")
+                print(feedback.feedback)
+            if passed:
+                input("\nHit Enter to proceed. ")
+            else:
+                print("\nTry again:\n")
         os.system("clear")
     return "complete"
 
@@ -194,6 +221,27 @@ def get_prompt_contents(spec):
     if spec["style"]:
         contents += f"\nI want the story to be written in this style/genre: {spec['style']}"
     return contents
+
+
+def check_answer(german, english, story, spec):
+    system_instruction = f"""
+You are a German tutor. Your purpose is to check the user's translation of a sentence and provide friendly feedback in English (max 25 words). Do not provide direct translations in the feedback.
+The sentence the user will attempt to translate: {german}
+Note the user has only seen the story up until that sentence. Here is the full story for context:
+{story}"""
+    contents = english
+    client = genai.Client(api_key=spec["api_key"])
+    response = client.models.generate_content(
+        model=spec["model"],
+        config=types.GenerateContentConfig(
+            system_instruction=system_instruction,
+            response_mime_type="application/json",
+            response_schema=Feedback,
+        ),
+        contents=contents,
+    )
+    feedback: Feedback = response.parsed
+    return feedback
 
 
 if __name__ == "__main__":
