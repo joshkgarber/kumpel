@@ -36,3 +36,7 @@ The following Python packages will be installed automatically into a new venv:
 - souddevice
 
 **Steps**
+
+1. Create a new Gemini API Key (to track costs separately)
+2. Clone the repository
+3. Create a `.env` file for the API key containing `KUMPEL_GEMINI_API_KEY="your_api_key"`

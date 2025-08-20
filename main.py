@@ -1,6 +1,14 @@
 import os
 import re
 from dotenv import load_dotenv
+from google import genai
+from pydantic import BaseModel
+from google.genai import types
+
+
+class Story(BaseModel):
+    story_name: str
+    sentences: list[str]
 
 
 def main():
@@ -21,8 +29,11 @@ def main():
     os.system("clear")
     input_medium = get_input_medium()
     os.system("clear")
-    model_choice = get_model_choice()
-    print(f"model_choice: {model_choice}")
+    model = get_model_choice()
+    os.system("clear")
+    spec = dict(level=level, topic=topic, style=style, output_medium=output_medium, input_medium=input_medium, model=model, api_key=api_key)
+    session = conduct_session(spec)
+    print(f"session: {session}")
 
 
 def get_german_level():
@@ -113,7 +124,16 @@ def get_model_choice():
 3. Gemini 2.5 Flash-Lite"""
     pattern = r"^[1,2,3]$"
     invalid_message = "Respond with 1, 2, or 3."
-    return get_user_input(message, pattern, invalid_message)
+    model_choice = get_user_input(message, pattern, invalid_message)
+    match model_choice:
+        case "1":
+            return "gemini-2.5-pro"
+        case "2":
+            return "gemini-2.5-flash"
+        case "3":
+            return "gemini-2.5-flash-lite"
+        case _:
+            raise Exception("Unsupported model choice")
 
 
 def get_user_input(message, pattern, invalid_message):
@@ -131,6 +151,26 @@ def validate_input(user_input, pattern, invalid_message):
         return True
     print(invalid_message)
     return False
+
+
+def conduct_session(spec):
+    story = get_story_json(spec["level"], spec["topic"], spec["style"], spec["model"], spec["api_key"])
+    return story
+
+
+def get_story_json(level, topic, style, model, api_key):
+    client = genai.Client(api_key=api_key)
+    response = client.models.generate_content(
+        model=model,
+        config=types.GenerateContentConfig(
+            system_instruction="You are a German storyteller.",
+            response_mime_type="application/json",
+            response_schema=Story,
+        ),
+        contents=f"Provide a story in German about encountering cute forest animals during a walk through the park on a beautiful spring morning.",
+    )
+    story: Story = response.parsed
+    return story
 
 
 if __name__ == "__main__":
