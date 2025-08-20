@@ -8,7 +8,7 @@ This project utilizes the Google Generative Language API (Gemini API). You need 
 
 Kumpel is a terminal-based program which helps you to understand written German texts. It's a guided learning experience consisting of back-and-forth conversational style content.
 
-It's not intended to be a complete solution to learning German as it focuses on one aspect of language learning - reading. The aim is to improve the user's ability to understand German texts in written form i.e. there is no speaking, listening or writing of German - only reading.
+It's not intended to be a complete solution to learning German as it focuses on one aspect of language learning - reading (comprehension). The aim is to improve the user's ability to understand German texts in written form. You can also use it to practice listening and speaking to some extent, but it's not the primary purpose of the app.
 
 ## Why use Kumpel?
 
