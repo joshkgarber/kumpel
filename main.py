@@ -30,13 +30,9 @@ def main():
     os.system("clear")
     style = get_particular_style()
     os.system("clear")
-    output_medium = get_output_medium()
-    os.system("clear")
-    input_medium = get_input_medium()
-    os.system("clear")
     model = get_model_choice()
     os.system("clear")
-    spec = dict(level=level, topic=topic, style=style, output_medium=output_medium, input_medium=input_medium, model=model, api_key=api_key)
+    spec = dict(level=level, topic=topic, style=style, model=model, api_key=api_key)
     session = conduct_session(spec)
     print(f"session: {session}")
 
@@ -116,27 +112,6 @@ Which style or genre would you like to request?
 Respond in one line (140 characters max)."""
     pattern = r"^.{1,140}$"
     invalid_message = "Your answer must be in one line and 1 to 140 characters long."
-    user_input = get_user_input(message, pattern, invalid_message)
-    return user_input
-
-
-def get_output_medium():
-    message = """Do you want to read or hear the text? Or both?\n
-1. Read
-2. Hear
-3. Both"""
-    pattern = r"^[1,2,3]$"
-    invalid_message = "Respond with 1, 2, or 3."
-    user_input = get_user_input(message, pattern, invalid_message)
-    return user_input
-
-
-def get_input_medium():
-    message = """Do you want to type or speak your answers?\n
-1. Type
-2. Speak"""
-    pattern = r"^[1,2]$"
-    invalid_message = "Respond with 1 or 2."
     user_input = get_user_input(message, pattern, invalid_message)
     return user_input
 
