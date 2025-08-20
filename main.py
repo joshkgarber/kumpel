@@ -6,9 +6,14 @@ from pydantic import BaseModel
 from google.genai import types
 
 
+class StorySentence(BaseModel):
+    german: str
+    english: str
+
+
 class Story(BaseModel):
     story_name: str
-    sentences: list[str]
+    sentences: list[StorySentence]
 
 
 def main():
@@ -49,7 +54,26 @@ def get_german_level():
 Respond with the number for your selection."""
     pattern = r"^[1,2,3,4,5,6,7,8]$"
     invalid_message = "Answer must be a number from 1 to 8."
-    return get_user_input(message, pattern, invalid_message)
+    level = get_user_input(message, pattern, invalid_message)
+    match level:
+        case "1":
+            return "complete beginner"
+        case "2":
+            return "below A1"
+        case "3":
+            return "A1"
+        case "4":
+            return "A2"
+        case "5":
+            return "B1"
+        case "6":
+            return "B2"
+        case "7":
+            return "C1"
+        case "8":
+            return "C2"
+        case _:
+            raise Exception("Unsupported input value for German level")
 
 
 def get_user_topic():
@@ -133,7 +157,7 @@ def get_model_choice():
         case "3":
             return "gemini-2.5-flash-lite"
         case _:
-            raise Exception("Unsupported model choice")
+            raise Exception("Unsupported input value for model choice")
 
 
 def get_user_input(message, pattern, invalid_message):
@@ -154,23 +178,34 @@ def validate_input(user_input, pattern, invalid_message):
 
 
 def conduct_session(spec):
-    story = get_story_json(spec["level"], spec["topic"], spec["style"], spec["model"], spec["api_key"])
+    story = get_story_json(spec)
     return story
 
 
-def get_story_json(level, topic, style, model, api_key):
-    client = genai.Client(api_key=api_key)
+def get_story_json(spec):
+    system_instruction = "You are a German storyteller. Your purpose is to provide a story which will help the user learn German."
+    contents = get_prompt_contents(spec)
+    client = genai.Client(api_key=spec["api_key"])
     response = client.models.generate_content(
-        model=model,
+        model=spec["model"],
         config=types.GenerateContentConfig(
-            system_instruction="You are a German storyteller.",
+            system_instruction=system_instruction,
             response_mime_type="application/json",
             response_schema=Story,
         ),
-        contents=f"Provide a story in German about encountering cute forest animals during a walk through the park on a beautiful spring morning.",
+        contents=contents,
     )
     story: Story = response.parsed
     return story
+
+
+def get_prompt_contents(spec):
+    contents = f"My current German level is: {spec['level']}. Provide me with a story to help me learn German."
+    if spec["topic"]:
+        contents += f"\nI want the story to be about this topic/theme: {spec['topic']}"
+    if spec["style"]:
+        contents += f"\nI want the story to be written in this style/genre: {spec['style']}"
+    return contents
 
 
 if __name__ == "__main__":
