@@ -154,7 +154,20 @@ def validate_input(user_input, pattern, invalid_message):
 
 def conduct_session(spec):
     story = get_story_json(spec)
-    return story
+    for sentence in story.sentences:
+        for i in range(2):
+            answer = None
+            print(sentence.german)
+            print(sentence.english)
+            while answer != sentence.english:
+                answer = input("\n")
+            os.system("clear")
+        answer = None
+        print(sentence.german)
+        while answer != sentence.english:
+            answer = input()
+        os.system("clear")
+    return "complete"
 
 
 def get_story_json(spec):
