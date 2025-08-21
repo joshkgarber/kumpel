@@ -1,4 +1,5 @@
 import os
+import sys
 import re
 from dotenv import load_dotenv
 from google import genai
@@ -26,20 +27,24 @@ def main():
     api_key = os.environ.get("KUMPEL_GEMINI_API_KEY")
     if not api_key:
         raise ValueError("Missing API key. Add KUMPEL_GEMINI_API_KEY to kumpel/.env e.g. KUMPEL_GEMINI_API_KEY=your_api_key")
-
-    os.system("clear");
-    print("Hello from Kumpel!\n")
-    level = get_german_level()
-    os.system("clear")
-    topic = get_user_topic()
-    os.system("clear")
-    style = get_particular_style()
-    os.system("clear")
-    model = get_model_choice()
-    os.system("clear")
-    spec = dict(level=level, topic=topic, style=style, model=model, api_key=api_key)
-    session = conduct_session(spec)
-    print(f"session: {session}")
+    try:
+        os.system("clear");
+        print("Hello from Kumpel!\n")
+        level = get_german_level()
+        os.system("clear")
+        topic = get_user_topic()
+        os.system("clear")
+        style = get_particular_style()
+        os.system("clear")
+        model = get_model_choice()
+        os.system("clear")
+        spec = dict(level=level, topic=topic, style=style, model=model, api_key=api_key)
+        session = conduct_session(spec)
+        print(f"session: {session}")
+    except KeyboardInterrupt:
+        os.system("clear")
+        print("Goodbye!")
+        sys.exit(0)
 
 
 def get_german_level():
