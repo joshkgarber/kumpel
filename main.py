@@ -1,5 +1,6 @@
 import os
 import sys
+import time
 import re
 from dotenv import load_dotenv
 from google import genai
@@ -7,16 +8,24 @@ from pydantic import BaseModel
 from google.genai import types
 
 
+# Gemini API retry config
+MAX_RETRIES = 5
+INITIAL_DELAY_SECONDS = 2
+
+
+# Gemini response schema
 class StorySentence(BaseModel):
     german: str
     english: str
 
 
+# Gemini response schema
 class Story(BaseModel):
     story_name: str
     sentences: list[StorySentence]
 
 
+# Gemini response schema
 class Feedback(BaseModel):
     correct: bool
     feedback: str
@@ -205,23 +214,19 @@ def conduct_session(spec):
 def get_story_json(spec):
     print("Generating story...\n")
     system_instruction = "You are a German storyteller. Your purpose is to provide a story which will help the user learn German."
-    contents = get_prompt_contents(spec)
-    client = genai.Client(api_key=spec["api_key"])
-    response = client.models.generate_content(
-        model=spec["model"],
-        config=types.GenerateContentConfig(
-            system_instruction=system_instruction,
-            response_mime_type="application/json",
-            response_schema=Story,
-        ),
-        contents=contents,
+    config = types.GenerateContentConfig(
+        system_instruction=system_instruction,
+        response_mime_type="application/json",
+        response_schema=Story,
     )
-    story: Story = response.parsed
+    contents = get_story_prompt_contents(spec)
+    gemini_response = get_gemini_response(spec, config, contents)
+    story: Story = gemini_response.parsed
     os.system("clear")
     return story
 
 
-def get_prompt_contents(spec):
+def get_story_prompt_contents(spec):
     contents = f"My current German level is: {spec['level']}. Provide me with a story to help me learn German."
     if spec["topic"]:
         contents += f"\nI want the story to be about this topic/theme: {spec['topic']}"
@@ -236,19 +241,53 @@ You are a German tutor. Your purpose is to check the user's translation of a sen
 The sentence the user will attempt to translate: {german}
 Note the user has only seen the story up until that sentence. Here is the full story for context:
 {story}"""
-    contents = english
-    client = genai.Client(api_key=spec["api_key"])
-    response = client.models.generate_content(
-        model=spec["model"],
-        config=types.GenerateContentConfig(
-            system_instruction=system_instruction,
-            response_mime_type="application/json",
-            response_schema=Feedback,
-        ),
-        contents=contents,
+    config = types.GenerateContentConfig(
+        system_instruction=system_instruction,
+        response_mime_type="application/json",
+        response_schema=Feedback,
     )
-    feedback: Feedback = response.parsed
+    contents = english
+    gemini_response = get_gemini_response(spec, config, contents)
+    feedback: Feedback = gemini_response.parsed
     return feedback
+
+
+def get_gemini_response(spec, config, contents):
+    client = genai.Client(api_key=spec["api_key"])
+    gemini_success = False
+    retry_count = 0
+    delay = INITIAL_DELAY_SECONDS
+
+    while not gemini_success and retry_count < MAX_RETRIES:
+        try:
+            response = client.models.generate_content(
+                model=spec["model"],
+                config=config,
+                contents=contents,
+            )
+            gemini_success = True
+
+        except Exception as e:
+            retry_count += 1
+            error_code = getattr(e, 'code', None)
+
+            if error_code in [429, 500, 503, 504]:
+                if retry_count < MAX_RETRIES:
+                    print(f"\nGemini error (Code: {error_code}). Retrying in {delay} seconds... (Attempt {retry_count}/{MAX_RETRIES})\n")
+                    time.sleep(delay)
+                    delay *= 2
+                else:
+                    print(f"\nGemini error (Code: {error_code}). Maximum retries reached.\n")
+            else:
+                print(f"An unrecoverable error occurred: {str(e)}")
+                print("Exiting. Goodbye!")
+                sys.exit(1)
+
+    if not gemini_success:
+        print("Failed to get a response from Gemini after multiple attempts. Exiting.")
+        sys.exit(1)
+
+    return response
 
 
 if __name__ == "__main__":
