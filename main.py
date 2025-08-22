@@ -169,7 +169,7 @@ def validate_input(user_input, pattern, invalid_message):
 
 
 def conduct_session(spec):
-    story = get_story_json(spec)
+    story = get_story(spec)
     german_sentences = [sentence.german for sentence in story.sentences]
     german_story_string = " ".join(german_sentences)
     for sentence in story.sentences:
@@ -211,7 +211,7 @@ def conduct_session(spec):
     return "complete"
 
 
-def get_story_json(spec):
+def get_story(spec):
     print("Generating story...\n")
     system_instruction = "You are a German storyteller. Your purpose is to provide a story which will help the user learn German."
     config = types.GenerateContentConfig(
@@ -220,8 +220,27 @@ def get_story_json(spec):
         response_schema=Story,
     )
     contents = get_story_prompt_contents(spec)
-    gemini_response = get_gemini_response(spec, config, contents)
-    story: Story = gemini_response.parsed
+    validated = False
+    retry_count = 0
+    delay = INITIAL_DELAY_SECONDS
+    while not validated and retry_count < MAX_RETRIES:
+        gemini_response = get_gemini_response(spec, config, contents)
+        story: Story = gemini_response.parsed
+        if isinstance(story, Story):
+            validated = True
+        else:
+            retry_count += 1
+            if retry_count < MAX_RETRIES:
+                print(f"The Gemini response is invalid. Retrying in {delay} seconds... (Attempt {retry_count}/{MAX_RETRIES})\n")
+                time.sleep(delay)
+                delay *= 2
+            else:
+                print(f"The Gemini response is invalid. Maximum retries reached.\n")
+
+    if not validated:
+        print("Gemini response was invalid after multiple attempts. Exiting.")
+        sys.exit(1)
+
     os.system("clear")
     return story
 
@@ -247,8 +266,28 @@ Note the user has only seen the story up until that sentence. Here is the full s
         response_schema=Feedback,
     )
     contents = english
-    gemini_response = get_gemini_response(spec, config, contents)
-    feedback: Feedback = gemini_response.parsed
+    validated = False
+    retry_count = 0
+    delay = INITIAL_DELAY_SECONDS
+    while not validated and retry_count < MAX_RETRIES:
+        gemini_response = get_gemini_response(spec, config, contents)
+        feedback: Feedback = gemini_response.parsed
+        if isinstance(feedback, Feedback):
+            validated = True
+        else:
+            retry_count += 1
+            if retry_count < MAX_RETRIES:
+                print(f"The Gemini response is invalid. Retrying in {delay} seconds... (Attempt {retry_count}/{MAX_RETRIES})\n")
+                time.sleep(delay)
+                delay *= 2
+            else:
+                print(f"The Gemini response is invalid. Maximum retries reached.")
+
+    if not validated:
+        print("Gemini response was invalid after multiple attempts. Exiting.")
+        sys.exit(1)
+
+    os.system("clear")
     return feedback
 
 
@@ -273,18 +312,18 @@ def get_gemini_response(spec, config, contents):
 
             if error_code in [429, 500, 503, 504]:
                 if retry_count < MAX_RETRIES:
-                    print(f"\nGemini error (Code: {error_code}). Retrying in {delay} seconds... (Attempt {retry_count}/{MAX_RETRIES})\n")
+                    print(f"Gemini error (Code: {error_code}). Retrying in {delay} seconds... (Attempt {retry_count}/{MAX_RETRIES})\n")
                     time.sleep(delay)
                     delay *= 2
                 else:
-                    print(f"\nGemini error (Code: {error_code}). Maximum retries reached.\n")
+                    print(f"Gemini error (Code: {error_code}). Maximum retries reached.")
             else:
                 print(f"An unrecoverable error occurred: {str(e)}")
                 print("Exiting. Goodbye!")
                 sys.exit(1)
 
     if not gemini_success:
-        print("Failed to get a response from Gemini after multiple attempts. Exiting.")
+        print("Gemini failed to respond after multiple attempts. Exiting.")
         sys.exit(1)
 
     return response
