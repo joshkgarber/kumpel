@@ -49,7 +49,7 @@ def main():
         os.system("clear")
         spec = dict(level=level, topic=topic, style=style, model=model, api_key=api_key)
         session = conduct_session(spec)
-        print(f"session: {session}")
+        print(f"I hope you enjoyed the story! Goodbye!")
     except KeyboardInterrupt:
         os.system("clear")
         print("Goodbye!")
@@ -215,9 +215,8 @@ def conduct_session(spec):
             if passed:
                 input("\nHit Enter to proceed. ")
             else:
-                print("\nTry again:\n")
+                print("\nTry again:")
         os.system("clear")
-    return "complete"
 
 
 def get_story(spec):
