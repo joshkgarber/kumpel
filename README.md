@@ -30,6 +30,7 @@ The following Python packages will be installed automatically into a new venv:
 
 - google-genai
 - python-dotenv
+- yaspin
 
 **Steps**
 

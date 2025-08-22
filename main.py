@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 from google import genai
 from pydantic import BaseModel
 from google.genai import types
+from yaspin import yaspin
 
 
 # Gemini API retry config
@@ -187,10 +188,10 @@ def conduct_session(spec):
                 valid = answer_validation(answer, sentence.english)
             feedback = check_answer(sentence.german, answer, german_story_string, spec)
             if feedback.correct:
-                print("\nCorrect!")
+                print("Correct!")
                 passed = True
             else:
-                print("\nIncorrect.\n")
+                print("Incorrect.\n")
                 print(feedback.feedback)
             if passed:
                 input("\nHit Enter to proceed. ")
@@ -206,11 +207,11 @@ def conduct_session(spec):
                 valid = answer_validation(answer, sentence.english)
             feedback = check_answer(sentence.german, answer, german_story_string, spec)
             if feedback.correct:
-                print("\nCorrect!\n")
+                print("Correct!\n")
                 print(feedback.feedback)
                 passed = True
             else:
-                print("\nIncorrect.\n")
+                print("Incorrect.\n")
                 print(feedback.feedback)
             if passed:
                 input("\nHit Enter to proceed. ")
@@ -220,30 +221,32 @@ def conduct_session(spec):
 
 
 def get_story(spec):
-    print("Generating story...\n")
-    system_instruction = "You are a German storyteller. Your purpose is to provide a story which will help the user learn German."
-    config = types.GenerateContentConfig(
-        system_instruction=system_instruction,
-        response_mime_type="application/json",
-        response_schema=Story,
-    )
-    contents = get_story_prompt_contents(spec)
-    validated = False
-    retry_count = 0
-    delay = INITIAL_DELAY_SECONDS
-    while not validated and retry_count < MAX_RETRIES:
-        gemini_response = get_gemini_response(spec, config, contents)
-        story: Story = gemini_response.parsed
-        if isinstance(story, Story):
-            validated = True
-        else:
-            retry_count += 1
-            if retry_count < MAX_RETRIES:
-                print(f"The Gemini response is invalid. Retrying in {delay} seconds... (Attempt {retry_count}/{MAX_RETRIES})\n")
-                time.sleep(delay)
-                delay *= 2
+    with yaspin(text="Generating story") as sp:
+        system_instruction = "You are a German storyteller. Your purpose is to provide a story which will help the user learn German."
+        config = types.GenerateContentConfig(
+            system_instruction=system_instruction,
+            response_mime_type="application/json",
+            response_schema=Story,
+        )
+        contents = get_story_prompt_contents(spec)
+        validated = False
+        retry_count = 0
+        delay = INITIAL_DELAY_SECONDS
+        while not validated and retry_count < MAX_RETRIES:
+            gemini_response = get_gemini_response(spec, config, contents)
+            story: Story = gemini_response.parsed
+            if isinstance(story, Story):
+                validated = True
+                sp.green.ok("✔")
             else:
-                print(f"The Gemini response is invalid. Maximum retries reached.\n")
+                retry_count += 1
+                if retry_count < MAX_RETRIES:
+                    sp.write(f"The Gemini response is invalid. Retrying in {delay} seconds... (Attempt {retry_count}/{MAX_RETRIES})")
+                    time.sleep(delay)
+                    delay *= 2
+                else:
+                    sp.write(f"The Gemini response is invalid. Maximum retries reached.")
+                    sp.red.fail("✘")
 
     if not validated:
         print("Gemini response was invalid after multiple attempts. Exiting.")
@@ -282,32 +285,36 @@ def answer_validation(answer, english):
 
 
 def check_answer(german, english, story, spec):
-    system_instruction = f"""
-You are a German tutor. Your purpose is to check the user's translation of a sentence and provide friendly feedback in English (max 25 words). Do not provide direct translations in the feedback.
-Note for context: the sentence comes from this text:
-{story}"""
-    config = types.GenerateContentConfig(
-        system_instruction=system_instruction,
-        response_mime_type="application/json",
-        response_schema=Feedback,
-    )
-    contents = f"Here is the sentence I am attempting to translate: {german}.\nHere is my translation: {english}\nPlease check my translation and give me your feedback."
-    validated = False
-    retry_count = 0
-    delay = INITIAL_DELAY_SECONDS
-    while not validated and retry_count < MAX_RETRIES:
-        gemini_response = get_gemini_response(spec, config, contents)
-        feedback: Feedback = gemini_response.parsed
-        if isinstance(feedback, Feedback):
-            validated = True
-        else:
-            retry_count += 1
-            if retry_count < MAX_RETRIES:
-                print(f"The Gemini response is invalid. Retrying in {delay} seconds... (Attempt {retry_count}/{MAX_RETRIES})\n")
-                time.sleep(delay)
-                delay *= 2
+    print()
+    with yaspin(text="Checking answer") as sp:
+        system_instruction = f"""
+    You are a German tutor. Your purpose is to check the user's translation of a sentence and provide friendly feedback in English (max 25 words). Do not provide direct translations in the feedback.
+    Note for context: the sentence comes from this text:
+    {story}"""
+        config = types.GenerateContentConfig(
+            system_instruction=system_instruction,
+            response_mime_type="application/json",
+            response_schema=Feedback,
+        )
+        contents = f"Here is the sentence I am attempting to translate: {german}.\nHere is my translation: {english}\nPlease check my translation and give me your feedback."
+        validated = False
+        retry_count = 0
+        delay = INITIAL_DELAY_SECONDS
+        while not validated and retry_count < MAX_RETRIES:
+            gemini_response = get_gemini_response(spec, config, contents)
+            feedback: Feedback = gemini_response.parsed
+            if isinstance(feedback, Feedback):
+                validated = True
+                sp.text = ""
             else:
-                print(f"The Gemini response is invalid. Maximum retries reached.")
+                retry_count += 1
+                if retry_count < MAX_RETRIES:
+                    sp.write(f"The Gemini response is invalid. Retrying in {delay} seconds... (Attempt {retry_count}/{MAX_RETRIES})\n")
+                    time.sleep(delay)
+                    delay *= 2
+                else:
+                    sp.write(f"The Gemini response is invalid. Maximum retries reached.")
+                    sp.red.fail("✘")
 
     if not validated:
         print("Gemini response was invalid after multiple attempts. Exiting.")
