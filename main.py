@@ -181,7 +181,10 @@ def conduct_session(spec):
         print(f"German:  {sentence.german}")
         print(f"English: {sentence.english}")
         while not passed:
-            answer = input("\nRepeat:  ")
+            valid = False
+            while not valid:
+                answer = input("\nRepeat:  ")
+                valid = answer_validation(answer, sentence.english)
             feedback = check_answer(sentence.german, answer, german_story_string, spec)
             if feedback.correct:
                 print("\nCorrect!")
@@ -197,7 +200,10 @@ def conduct_session(spec):
         passed = False
         print(f"German:  {sentence.german}")
         while not passed:
-            answer = input("English: ")
+            valid = False
+            while not valid:
+                answer = input("English: ")
+                valid = answer_validation(answer, sentence.english)
             feedback = check_answer(sentence.german, answer, german_story_string, spec)
             if feedback.correct:
                 print("\nCorrect!\n")
@@ -255,6 +261,25 @@ def get_story_prompt_contents(spec):
     if spec["style"]:
         contents += f"\nI want the story to be written in this style/genre: {spec['style']}"
     return contents
+
+
+def answer_validation(answer, english):
+    # Use statistical heuristic to validate based on word count
+    sd_percentage = 0.25
+    num_std_devs = 2
+    len_correct = len(english.split())
+    std_dev = len_correct * sd_percentage
+    lower_bound = max(1, len_correct - (num_std_devs * std_dev))
+    upper_bound = len_correct + (num_std_devs * std_dev)
+    len_answer = len(answer.split())
+    if len_answer < lower_bound:
+        print("\nYour answer is too short. Try again.")
+        return False
+    elif len_answer > upper_bound:
+        print("\nYour answer is too long. Try again.\n")
+        return False
+    else:
+        return True
 
 
 def check_answer(german, english, story, spec):
