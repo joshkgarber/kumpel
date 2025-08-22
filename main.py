@@ -58,7 +58,7 @@ def main():
 
 def get_german_level():
     message = """What is your level of German?\n
-1. Before A1
+1. Beginner
 2. A1
 3. A2
 4. B1
