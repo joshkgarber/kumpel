@@ -260,15 +260,14 @@ def get_story_prompt_contents(spec):
 def check_answer(german, english, story, spec):
     system_instruction = f"""
 You are a German tutor. Your purpose is to check the user's translation of a sentence and provide friendly feedback in English (max 25 words). Do not provide direct translations in the feedback.
-The sentence the user will attempt to translate: {german}
-Note the user has only seen the story up until that sentence. Here is the full story for context:
+Note for context: the sentence comes from this text:
 {story}"""
     config = types.GenerateContentConfig(
         system_instruction=system_instruction,
         response_mime_type="application/json",
         response_schema=Feedback,
     )
-    contents = english
+    contents = f"Here is the sentence I am attempting to translate: {german}.\nHere is my translation: {english}\nPlease check my translation and give me your feedback."
     validated = False
     retry_count = 0
     delay = INITIAL_DELAY_SECONDS
