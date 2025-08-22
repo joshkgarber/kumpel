@@ -40,6 +40,8 @@ def main():
     try:
         os.system("clear");
         print("Hello from Kumpel!\n")
+        mode = get_mode()
+        os.system("clear")
         level = get_german_level()
         os.system("clear")
         topic = get_user_topic()
@@ -48,13 +50,35 @@ def main():
         os.system("clear")
         model = get_model_choice()
         os.system("clear")
-        spec = dict(level=level, topic=topic, style=style, model=model, api_key=api_key)
+        spec = dict(mode=mode, level=level, topic=topic, style=style, model=model, api_key=api_key)
         session = conduct_session(spec)
         print(f"I hope you enjoyed the story! Goodbye!")
     except KeyboardInterrupt:
         os.system("clear")
         print("Goodbye!")
         sys.exit(0)
+
+
+def get_mode():
+    message = """What do you want to do?
+
+1. Learn
+2. Practice
+3. Test
+
+Respond with the number for your selection."""
+    pattern = r"^[1,2,3]$"
+    invalid_message = "Answer must be a number from 1 to 3."
+    level = get_user_input(message, pattern, invalid_message)
+    match level:
+        case "1":
+            return "learn"
+        case "2":
+            return "practice"
+        case "3":
+            return "test"
+        case _:
+            raise Exception("Unsupported input value for mode")
 
 
 def get_german_level():
@@ -174,30 +198,31 @@ def conduct_session(spec):
     german_sentences = [sentence.german for sentence in story.sentences]
     german_story_string = " ".join(german_sentences)
     for sentence in story.sentences:
-        passed = False
-        print(f"German:  {sentence.german}")
-        print()
-        input("Hit enter for translation. ")
-        os.system("clear")
-        print(f"German:  {sentence.german}")
-        print(f"\nEnglish: {sentence.english}")
-        while not passed:
-            valid = False
-            while not valid:
-                answer = input("\nRepeat:  ")
-                valid = answer_validation(answer, sentence.english)
-            feedback = check_answer(sentence.german, answer, german_story_string, spec)
-            if feedback.correct:
-                print("Correct!")
-                passed = True
-            else:
-                print("Incorrect.\n")
-                print(feedback.feedback)
-            if passed:
-                input("\nHit Enter to proceed. ")
-            else:
-                print("\nTry again!")
-        os.system("clear")
+        if spec["mode"] == "learn":
+            passed = False
+            print(f"German:  {sentence.german}")
+            print()
+            input("Hit enter for translation. ")
+            os.system("clear")
+            print(f"German:  {sentence.german}")
+            print(f"\nEnglish: {sentence.english}")
+            while not passed:
+                valid = False
+                while not valid:
+                    answer = input("\nRepeat:  ")
+                    valid = answer_validation(answer, sentence.english)
+                feedback = check_answer(sentence.german, answer, german_story_string, spec)
+                if feedback.correct:
+                    print("Correct!")
+                    passed = True
+                else:
+                    print("Incorrect.\n")
+                    print(feedback.feedback)
+                if passed:
+                    input("\nHit Enter to proceed. ")
+                else:
+                    print("\nTry again!")
+            os.system("clear")
         passed = False
         print(f"German:  {sentence.german}")
         while not passed:
@@ -208,15 +233,15 @@ def conduct_session(spec):
             feedback = check_answer(sentence.german, answer, german_story_string, spec)
             if feedback.correct:
                 print("Correct!\n")
-                print(feedback.feedback)
                 passed = True
             else:
                 print("Incorrect.\n")
-                print(feedback.feedback)
+                if spec["mode"] == "practice":
+                    print(feedback.feedback, "\n")
             if passed:
-                input("\nHit Enter to proceed. ")
+                input("Hit Enter to proceed. ")
             else:
-                print("\nTry again:")
+                print("Try again.")
         os.system("clear")
 
 
@@ -287,9 +312,11 @@ def check_answer(german, english, story, spec):
     print()
     with yaspin(text="Checking answer") as sp:
         system_instruction = f"""
-    You are a German tutor. Your purpose is to check the user's translation of a sentence and provide friendly feedback in English (max 25 words). Do not provide direct translations in the feedback.
-    Note for context: the sentence comes from this text:
-    {story}"""
+You are a German tutor. Your purpose is to check the user's translation of a sentence.
+Provide friendly feedback in English (max 25 words) if the translation is incorrect.
+Do not provide direct translations in the feedback.
+For context: the sentence comes from this text:
+{story}"""
         config = types.GenerateContentConfig(
             system_instruction=system_instruction,
             response_mime_type="application/json",
