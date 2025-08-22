@@ -237,7 +237,6 @@ def get_story(spec):
             story: Story = gemini_response.parsed
             if isinstance(story, Story):
                 validated = True
-                sp.green.ok("✔")
             else:
                 retry_count += 1
                 if retry_count < MAX_RETRIES:
