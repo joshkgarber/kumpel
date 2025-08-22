@@ -134,19 +134,19 @@ Respond in one line (140 characters max)."""
 
 def get_model_choice():
     message = """Which model would you like to use?\n
-1. Gemini 2.5 Pro
-2. Gemini 2.5 Flash
-3. Gemini 2.5 Flash-Lite"""
+1. Gemini 2.5 Flash (Recommended)
+2. Gemini 2.5 Flash-Lite
+3. Gemini 2.5 Pro"""
     pattern = r"^[1,2,3]$"
     invalid_message = "Respond with 1, 2, or 3."
     model_choice = get_user_input(message, pattern, invalid_message)
     match model_choice:
         case "1":
-            return "gemini-2.5-pro"
-        case "2":
             return "gemini-2.5-flash"
-        case "3":
+        case "2":
             return "gemini-2.5-flash-lite"
+        case "3":
+            return "gemini-2.5-pro"
         case _:
             raise Exception("Unsupported input value for model choice")
 
@@ -173,28 +173,31 @@ def conduct_session(spec):
     german_sentences = [sentence.german for sentence in story.sentences]
     german_story_string = " ".join(german_sentences)
     for sentence in story.sentences:
-        for i in range(2):
-            passed = False
-            print(sentence.german)
-            print(sentence.english)
-            while not passed:
-                answer = input("\n")
-                feedback = check_answer(sentence.german, answer, german_story_string, spec)
-                if feedback.correct:
-                    print("\nCorrect!")
-                    passed = True
-                else:
-                    print("\nIncorrect.\n")
-                    print(feedback.feedback)
-                if passed:
-                    input("\nHit Enter to proceed. ")
-                else:
-                    print("\nTry again!")
-            os.system("clear")
         passed = False
-        print(sentence.german)
+        print(f"German:  {sentence.german}")
+        print()
+        input("Hit enter for translation. ")
+        os.system("clear")
+        print(f"German:  {sentence.german}")
+        print(f"English: {sentence.english}")
         while not passed:
-            answer = input()
+            answer = input("\nRepeat:  ")
+            feedback = check_answer(sentence.german, answer, german_story_string, spec)
+            if feedback.correct:
+                print("\nCorrect!")
+                passed = True
+            else:
+                print("\nIncorrect.\n")
+                print(feedback.feedback)
+            if passed:
+                input("\nHit Enter to proceed. ")
+            else:
+                print("\nTry again!")
+        os.system("clear")
+        passed = False
+        print(f"German:  {sentence.german}")
+        while not passed:
+            answer = input("English: ")
             feedback = check_answer(sentence.german, answer, german_story_string, spec)
             if feedback.correct:
                 print("\nCorrect!\n")
