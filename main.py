@@ -287,7 +287,6 @@ Note the user has only seen the story up until that sentence. Here is the full s
         print("Gemini response was invalid after multiple attempts. Exiting.")
         sys.exit(1)
 
-    os.system("clear")
     return feedback
 
 
