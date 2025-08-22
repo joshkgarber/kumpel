@@ -179,7 +179,7 @@ def conduct_session(spec):
         input("Hit enter for translation. ")
         os.system("clear")
         print(f"German:  {sentence.german}")
-        print(f"English: {sentence.english}")
+        print(f"\nEnglish: {sentence.english}")
         while not passed:
             valid = False
             while not valid:
@@ -202,7 +202,7 @@ def conduct_session(spec):
         while not passed:
             valid = False
             while not valid:
-                answer = input("English: ")
+                answer = input("\nEnglish: ")
                 valid = answer_validation(answer, sentence.english)
             feedback = check_answer(sentence.german, answer, german_story_string, spec)
             if feedback.correct:
@@ -276,7 +276,7 @@ def answer_validation(answer, english):
         print("\nYour answer is too short. Try again.")
         return False
     elif len_answer > upper_bound:
-        print("\nYour answer is too long. Try again.\n")
+        print("\nYour answer is too long. Try again.")
         return False
     else:
         return True
