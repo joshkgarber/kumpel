@@ -8,5 +8,6 @@ dependencies = [
     "click>=8.2.1",
     "google-genai>=1.31.0",
     "python-dotenv>=1.1.1",
+    "texttable>=1.7.0",
     "yaspin>=3.1.0",
 ]

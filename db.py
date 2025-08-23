@@ -1,7 +1,7 @@
 import sqlite3
 
 
-DB = 'stories.sqlite'
+DB = 'story.sqlite'
 
 
 def dict_factory(cursor, row):
@@ -14,4 +14,17 @@ def get_db():
     db.row_factory = dict_factory
     return db
 
+
+def load_stories():
+    db = get_db()
+    stories = db.execute("SELECT id, name, level, topic, style, model FROM story").fetchall()
+    db.close()
+    return stories
+
+
+def load_story(story_id):
+    db = get_db()
+    story = db.execute("SELECT jsonstring FROM story WHERE id = ?", story_id).fetchone()
+    db.close()
+    return story
 

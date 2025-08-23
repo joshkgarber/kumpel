@@ -11,8 +11,9 @@ CREATE TABLE story (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     level TEXT NOT NULL,
-    topic TEXT
+    topic TEXT,
     style TEXT,
+    model TEXT,
     jsonstring TEXT NOT NULL
 );
 COMMIT;

@@ -2,11 +2,18 @@ import os
 import sys
 import time
 import re
+from db import DB
+from db import load_stories
+from texttable import Texttable
 from dotenv import load_dotenv
 from google import genai
 from pydantic import BaseModel
 from google.genai import types
 from yaspin import yaspin
+
+
+# Gemini API key global
+api_key = None
 
 
 # Gemini API retry config
@@ -38,6 +45,7 @@ story_progress = []
 
 
 def main():
+    global api_key
     load_dotenv()
     api_key = os.environ.get("KUMPEL_GEMINI_API_KEY")
     if not api_key:
@@ -45,18 +53,10 @@ def main():
     try:
         new_screen()
         print("Hello from Kumpel!\n")
+        story, model = get_story()
         mode = get_mode()
         new_screen()
-        level = get_german_level()
-        new_screen()
-        topic = get_user_topic()
-        new_screen()
-        style = get_particular_style()
-        new_screen()
-        model = get_model_choice()
-        new_screen()
-        spec = dict(mode=mode, level=level, topic=topic, style=style, model=model, api_key=api_key)
-        session = conduct_session(spec)
+        session = conduct_session(story, model, mode)
         os.system("clear")
         print(f"I hope you enjoyed the story! Goodbye!")
     except KeyboardInterrupt:
@@ -82,12 +82,73 @@ def update_header(update):
     header += update
 
 
+def get_story():
+    if not os.path.exists(DB):
+        raise Exception("Missing SQLite database. Initialize the database with command: uv run init_db.py")
+
+    stories = load_stories()
+    if stories:
+        print(f"You have {len(stories)} saved stories.")
+        print_saved_stories(stories)
+        message = """What do you want to do?
+
+1. Use a saved story.
+2. Generate a new story.
+
+Respond with the number for your selection."""
+        pattern = r"^[1,2]$"
+        invalid_message = "Answer must be a number: 1 or 2"
+        source = get_user_input(message, pattern, invalid_message)
+        if source == "1":
+            return get_saved_story(stories)
+
+    update_header(" > Generate story")
+    print("You have no saved stories. Let's generate a story.\n")
+    input("Hit Enter to proceed.")
+    new_screen()
+    level = get_german_level()
+    new_screen()
+    topic = get_user_topic()
+    new_screen()
+    style = get_particular_style()
+    new_screen()
+    model = get_model_choice()
+    new_screen()
+    return generate_story(level, topic, style, model), model
+
+
+def print_saved_stories(stories):
+    # id, name, level, topic, style, model
+    table = Texttable()
+    table.set_cols_align(["c", "l", "c", "l", "l", "c"])
+    table.set_cols_valign(["c", "c", "c", "c", "c", "c"])
+    table.set_deco(Texttable.HEADER)
+    table.set_cols_dtype(["t", "t", "t", "t", "t", "t"])
+    headers = list(stories[0].keys())
+    data = [headers] + [list(story.values()) for story in stories]
+    print(table.draw())
+
+def get_saved_story(stories):
+    story_ids = [story["id"] for story in stories]
+    message = """Which story would you like to use?
+
+Respond with the story ID."""
+    id_string = ", ".join(story_ids)[:-2]
+    pattern = rf"^[{id_string}]$"
+    invalid_message = "Answer must be one of the story IDs."
+    story_id = get_user_input(message, patter, invalid_message)
+    story = next((story for story in stories if story["id"] == story_id), None)
+    if story:
+        return story
+    raise Exception("An error occurred getting saved story.")
+
+
 def get_mode():
     message = """What do you want to do?
 
-1. Learn
-2. Practice
-3. Test
+1. <b>Learn</b> (See English once and get feedback for incorrect answers)
+2. <b>Practice</b> (No English given. Get feedback for incorrect answers)
+3. <b>Test</b> (No English and no feedback)
 
 Respond with the number for your selection."""
     pattern = r"^[1,2,3]$"
@@ -108,7 +169,7 @@ Respond with the number for your selection."""
 
 
 def get_german_level():
-    message = """What is your level of German?\n
+    message = """Choose a level of German.\n
 1. Beginner
 2. A1
 3. A2
@@ -233,13 +294,12 @@ def validate_input(user_input, pattern, invalid_message):
     return False
 
 
-def conduct_session(spec):
+def conduct_session(story, model, mode):
     global story_progress
-    story = get_story(spec)
     german_sentences = [sentence.german for sentence in story.sentences]
     german_story_string = " ".join(german_sentences)
     for sentence in story.sentences:
-        if spec["mode"] == "learn":
+        if mode == "learn":
             passed = False
             print(f"German:  {sentence.german}")
             print()
@@ -252,7 +312,7 @@ def conduct_session(spec):
                 while not valid:
                     answer = input("\nRepeat:  ")
                     valid = answer_validation(answer, sentence.english)
-                feedback = check_answer(sentence.german, answer, german_story_string, spec)
+                feedback = check_answer(sentence.german, answer, german_story_string, model)
                 if feedback.correct:
                     print("\033[32mCorrect!\033[0m")
                     passed = True
@@ -271,7 +331,7 @@ def conduct_session(spec):
             while not valid:
                 answer = input("\nEnglish: ")
                 valid = answer_validation(answer, sentence.english)
-            feedback = check_answer(sentence.german, answer, german_story_string, spec)
+            feedback = check_answer(sentence.german, answer, german_story_string, model)
             if feedback.correct:
                 print("\033[32mCorrect!\033[0m\n")
                 passed = True
@@ -287,7 +347,8 @@ def conduct_session(spec):
         new_screen()
 
 
-def get_story(spec):
+def generate_story(level, topic, style, model):
+    new_screen()
     with yaspin(text="Generating story") as sp:
         system_instruction = "You are a German storyteller. Your purpose is to provide a story which will help the user learn German."
         config = types.GenerateContentConfig(
@@ -295,15 +356,18 @@ def get_story(spec):
             response_mime_type="application/json",
             response_schema=Story,
         )
-        contents = get_story_prompt_contents(spec)
+        contents = get_story_prompt_contents(level, topic, style)
         validated = False
         retry_count = 0
         delay = INITIAL_DELAY_SECONDS
         while not validated and retry_count < MAX_RETRIES:
-            gemini_response = get_gemini_response(spec, config, contents)
+            gemini_response = get_gemini_response(model, config, contents)
             story: Story = gemini_response.parsed
             if isinstance(story, Story):
                 validated = True
+                sp.text = "Generated story"
+                sp.green.ok("✔")
+                print()
             else:
                 retry_count += 1
                 if retry_count < MAX_RETRIES:
@@ -318,16 +382,15 @@ def get_story(spec):
         print("Gemini response was invalid after multiple attempts. Exiting.")
         sys.exit(1)
 
-    new_screen()
     return story
 
 
-def get_story_prompt_contents(spec):
-    contents = f"My current German level is: {spec['level']}. Provide me with a story to help me learn German."
-    if spec["topic"]:
-        contents += f"\nI want the story to be about this topic/theme: {spec['topic']}"
-    if spec["style"]:
-        contents += f"\nI want the story to be written in this style/genre: {spec['style']}"
+def get_story_prompt_contents(level, topic, style):
+    contents = f"My current German level is: {level}. Provide me with a story to help me learn German."
+    if topic:
+        contents += f"\nI want the story to be about this topic/theme: {topic}"
+    if style:
+        contents += f"\nI want the story to be written in this style/genre: {style}"
     return contents
 
 
@@ -350,7 +413,7 @@ def answer_validation(answer, english):
         return True
 
 
-def check_answer(german, english, story, spec):
+def check_answer(german, english, story, model):
     print()
     with yaspin(text="Checking answer") as sp:
         system_instruction = f"""
@@ -369,7 +432,7 @@ For context: the sentence comes from this text:
         retry_count = 0
         delay = INITIAL_DELAY_SECONDS
         while not validated and retry_count < MAX_RETRIES:
-            gemini_response = get_gemini_response(spec, config, contents)
+            gemini_response = get_gemini_response(model, config, contents)
             feedback: Feedback = gemini_response.parsed
             if isinstance(feedback, Feedback):
                 validated = True
@@ -391,8 +454,9 @@ For context: the sentence comes from this text:
     return feedback
 
 
-def get_gemini_response(spec, config, contents):
-    client = genai.Client(api_key=spec["api_key"])
+def get_gemini_response(model, config, contents):
+    global api_key
+    client = genai.Client(api_key=api_key)
     gemini_success = False
     retry_count = 0
     delay = INITIAL_DELAY_SECONDS
@@ -400,7 +464,7 @@ def get_gemini_response(spec, config, contents):
     while not gemini_success and retry_count < MAX_RETRIES:
         try:
             response = client.models.generate_content(
-                model=spec["model"],
+                model=model,
                 config=config,
                 contents=contents,
             )
