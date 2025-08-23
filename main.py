@@ -33,7 +33,8 @@ class Feedback(BaseModel):
 
 
 # Header display
-HEADER = "> Start"
+header = "> Start"
+story_progress = []
 
 
 def main():
@@ -65,14 +66,20 @@ def main():
 
 
 def new_screen():
-    global HEADER
+    global header
+    global story_progress
     os.system("clear")
-    print(HEADER, "\n")
+    print(header, "\n")
+    if len(story_progress) > 0:
+        print("> Story: ", end="")
+        for sentence in story_progress:
+            print(sentence, end=" ")
+        print("\n")
 
 
 def update_header(update):
-    global HEADER
-    HEADER += update
+    global header
+    header += update
 
 
 def get_mode():
@@ -227,6 +234,7 @@ def validate_input(user_input, pattern, invalid_message):
 
 
 def conduct_session(spec):
+    global story_progress
     story = get_story(spec)
     german_sentences = [sentence.german for sentence in story.sentences]
     german_story_string = " ".join(german_sentences)
@@ -272,6 +280,7 @@ def conduct_session(spec):
                 if spec["mode"] == "practice":
                     print(feedback.feedback, "\n")
             if passed:
+                story_progress.append(sentence.german)
                 input("Hit Enter to proceed. ")
             else:
                 print("Try again.")
