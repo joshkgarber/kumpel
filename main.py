@@ -32,31 +32,47 @@ class Feedback(BaseModel):
     feedback: str
 
 
+# Header display
+HEADER = "> Start"
+
+
 def main():
     load_dotenv()
     api_key = os.environ.get("KUMPEL_GEMINI_API_KEY")
     if not api_key:
         raise ValueError("Missing API key. Add KUMPEL_GEMINI_API_KEY to kumpel/.env e.g. KUMPEL_GEMINI_API_KEY=your_api_key")
     try:
-        os.system("clear");
+        new_screen()
         print("Hello from Kumpel!\n")
         mode = get_mode()
-        os.system("clear")
+        new_screen()
         level = get_german_level()
-        os.system("clear")
+        new_screen()
         topic = get_user_topic()
-        os.system("clear")
+        new_screen()
         style = get_particular_style()
-        os.system("clear")
+        new_screen()
         model = get_model_choice()
-        os.system("clear")
+        new_screen()
         spec = dict(mode=mode, level=level, topic=topic, style=style, model=model, api_key=api_key)
         session = conduct_session(spec)
+        os.system("clear")
         print(f"I hope you enjoyed the story! Goodbye!")
     except KeyboardInterrupt:
         os.system("clear")
         print("Goodbye!")
         sys.exit(0)
+
+
+def new_screen():
+    global HEADER
+    os.system("clear")
+    print(HEADER, "\n")
+
+
+def update_header(update):
+    global HEADER
+    HEADER += update
 
 
 def get_mode():
@@ -72,10 +88,13 @@ Respond with the number for your selection."""
     level = get_user_input(message, pattern, invalid_message)
     match level:
         case "1":
+            update_header(" > Mode: Learn")
             return "learn"
         case "2":
+            update_header(" > Mode: Practice")
             return "practice"
         case "3":
+            update_header(" > Mode: Test")
             return "test"
         case _:
             raise Exception("Unsupported input value for mode")
@@ -96,18 +115,25 @@ Respond with the number for your selection."""
     level = get_user_input(message, pattern, invalid_message)
     match level:
         case "1":
-            return "below A1"
+            update_header(" > Level: Beginner")
+            return "complete beginner"
         case "2":
+            update_header(" > Level: A1")
             return "A1"
         case "3":
+            update_header(" > Level: A2")
             return "A2"
         case "4":
+            update_header(" > Level: B1")
             return "B1"
         case "5":
+            update_header(" > Level: B2")
             return "B2"
         case "6":
+            update_header(" > Level: C1")
             return "C1"
         case "7":
+            update_header(" > Level: C2")
             return "C2"
         case _:
             raise Exception("Unsupported input value for German level")
@@ -121,6 +147,7 @@ def get_user_topic():
     invalid_message = "Respond with 1 for yes or 2 for no."
     user_input = get_user_input(message, pattern, invalid_message)
     if user_input == "2":
+        update_header(" > Topic: Default")
         return None
     message = """
 Which topics and/or themes would you like to cover in the session?
@@ -129,6 +156,7 @@ Respond in one line (140 characters max)."""
     pattern = r"^.{1,140}$"
     invalid_message = "Your answer must be in one line and 1 to 140 characters long."
     user_input = get_user_input(message, pattern, invalid_message)
+    update_header(" > Topic: Custom")
     return user_input
 
 
@@ -146,6 +174,7 @@ For example:
     invalid_message = "Respond with 1 for yes or 2 for no."
     user_input = get_user_input(message, pattern, invalid_message)
     if user_input == "2":
+        update_header(" > Style: Default")
         return None
     message = """
 Which style or genre would you like to request?
@@ -154,6 +183,7 @@ Respond in one line (140 characters max)."""
     pattern = r"^.{1,140}$"
     invalid_message = "Your answer must be in one line and 1 to 140 characters long."
     user_input = get_user_input(message, pattern, invalid_message)
+    update_header(" > Style: Custom")
     return user_input
 
 
@@ -167,10 +197,13 @@ def get_model_choice():
     model_choice = get_user_input(message, pattern, invalid_message)
     match model_choice:
         case "1":
+            update_header(" > Model: Flash")
             return "gemini-2.5-flash"
         case "2":
+            update_header(" > Model: Flash Lite")
             return "gemini-2.5-flash-lite"
         case "3":
+            update_header(" > Model: Pro")
             return "gemini-2.5-pro"
         case _:
             raise Exception("Unsupported input value for model choice")
@@ -203,7 +236,7 @@ def conduct_session(spec):
             print(f"German:  {sentence.german}")
             print()
             input("Hit enter for translation. ")
-            os.system("clear")
+            new_screen()
             print(f"German:  {sentence.german}")
             print(f"\nEnglish: {sentence.english}")
             while not passed:
@@ -222,7 +255,7 @@ def conduct_session(spec):
                     input("\nHit Enter to proceed. ")
                 else:
                     print("\nTry again!")
-            os.system("clear")
+            new_screen()
         passed = False
         print(f"German:  {sentence.german}")
         while not passed:
@@ -242,7 +275,7 @@ def conduct_session(spec):
                 input("Hit Enter to proceed. ")
             else:
                 print("Try again.")
-        os.system("clear")
+        new_screen()
 
 
 def get_story(spec):
@@ -276,7 +309,7 @@ def get_story(spec):
         print("Gemini response was invalid after multiple attempts. Exiting.")
         sys.exit(1)
 
-    os.system("clear")
+    new_screen()
     return story
 
 
