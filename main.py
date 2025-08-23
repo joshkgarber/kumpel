@@ -243,7 +243,7 @@ def conduct_session(spec):
             passed = False
             print(f"German:  {sentence.german}")
             print()
-            input("Hit enter for translation. ")
+            input("Read the sentence. Then hit Enter for the translation. ")
             new_screen()
             print(f"German:  {sentence.german}")
             print(f"\nEnglish: {sentence.english}")
@@ -254,10 +254,10 @@ def conduct_session(spec):
                     valid = answer_validation(answer, sentence.english)
                 feedback = check_answer(sentence.german, answer, german_story_string, spec)
                 if feedback.correct:
-                    print("Correct!")
+                    print("\033[32mCorrect!\033[0m")
                     passed = True
                 else:
-                    print("Incorrect.\n")
+                    print("\033[31mIncorrect.\033[0m\n")
                     print(feedback.feedback)
                 if passed:
                     input("\nHit Enter to proceed. ")
@@ -273,10 +273,10 @@ def conduct_session(spec):
                 valid = answer_validation(answer, sentence.english)
             feedback = check_answer(sentence.german, answer, german_story_string, spec)
             if feedback.correct:
-                print("Correct!\n")
+                print("\033[32mCorrect!\033[0m\n")
                 passed = True
             else:
-                print("Incorrect.\n")
+                print("\033[31mIncorrect.\033[0m\n")
                 if spec["mode"] == "practice":
                     print(feedback.feedback, "\n")
             if passed:
