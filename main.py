@@ -2,8 +2,10 @@ import os
 import sys
 import time
 import re
-from db import DB
-from db import load_stories
+import copy
+import json
+from db import DB, init_db, load_stories, load_story, save_story
+from ansitext import Style, Color, stylize
 from texttable import Texttable
 from dotenv import load_dotenv
 from google import genai
@@ -40,7 +42,7 @@ class Feedback(BaseModel):
 
 
 # Header display
-header = "> Start"
+header = stylize(Style.BOLD, Color.YELLOW, "> Start")
 story_progress = []
 
 
@@ -53,11 +55,13 @@ def main():
     try:
         new_screen()
         print("Hello from Kumpel!\n")
-        story, model = get_story()
+        story = get_story()
+        update_header(f" > Story: {story['content'].story_name}")
         mode = get_mode()
         new_screen()
-        session = conduct_session(story, model, mode)
-        os.system("clear")
+        conduct_session(story, mode)
+        new_screen()
+        save(story)
         print(f"I hope you enjoyed the story! Goodbye!")
     except KeyboardInterrupt:
         os.system("clear")
@@ -71,7 +75,7 @@ def new_screen():
     os.system("clear")
     print(header, "\n")
     if len(story_progress) > 0:
-        print("> Story: ", end="")
+        print("Progress: ", end="")
         for sentence in story_progress:
             print(sentence, end=" ")
         print("\n")
@@ -84,12 +88,13 @@ def update_header(update):
 
 def get_story():
     if not os.path.exists(DB):
-        raise Exception("Missing SQLite database. Initialize the database with command: uv run init_db.py")
+        init_db()
 
     stories = load_stories()
-    if stories:
-        print(f"You have {len(stories)} saved stories.")
-        print_saved_stories(stories)
+    if not stories:
+        print("You have no saved stories. Let's generate a story.\n")
+        input("Hit Enter to proceed.")
+    else:
         message = """What do you want to do?
 
 1. Use a saved story.
@@ -103,8 +108,6 @@ Respond with the number for your selection."""
             return get_saved_story(stories)
 
     update_header(" > Generate story")
-    print("You have no saved stories. Let's generate a story.\n")
-    input("Hit Enter to proceed.")
     new_screen()
     level = get_german_level()
     new_screen()
@@ -114,36 +117,81 @@ Respond with the number for your selection."""
     new_screen()
     model = get_model_choice()
     new_screen()
-    return generate_story(level, topic, style, model), model
+    content = generate_story(level, topic, style, model)
+    story = dict(id=None, level=level, topic=topic, style=style, model=model, content=content)
+    return story
 
 
 def print_saved_stories(stories):
+    saved_stories = copy.deepcopy(stories)
     # id, name, level, topic, style, model
     table = Texttable()
     table.set_cols_align(["c", "l", "c", "l", "l", "c"])
-    table.set_cols_valign(["c", "c", "c", "c", "c", "c"])
+    table.set_cols_valign(["t", "t", "t", "t", "t", "t"])
     table.set_deco(Texttable.HEADER)
     table.set_cols_dtype(["t", "t", "t", "t", "t", "t"])
-    headers = list(stories[0].keys())
-    data = [headers] + [list(story.values()) for story in stories]
-    print(table.draw())
+    for story in saved_stories:
+        if story["level"] == "complete beginner":
+            story["level"] = "Beginner"
+        story["model"] = model_code_to_text(story["model"])
+    headers = list(saved_stories[0].keys())
+    headers = ["ID"] + [header.capitalize() for header in headers[1:]]
+    data = [headers] + [list(story.values()) for story in saved_stories]
+    table.add_rows(data)
+    print(table.draw(), "\n")
+
 
 def get_saved_story(stories):
-    story_ids = [story["id"] for story in stories]
+    update_header(" > Load Story")
+    new_screen()
+    print_saved_stories(stories)
+    story_ids = [str(story["id"]) for story in stories]
     message = """Which story would you like to use?
 
 Respond with the story ID."""
-    id_string = ", ".join(story_ids)[:-2]
+    id_string = ", ".join(story_ids)
     pattern = rf"^[{id_string}]$"
     invalid_message = "Answer must be one of the story IDs."
-    story_id = get_user_input(message, patter, invalid_message)
-    story = next((story for story in stories if story["id"] == story_id), None)
+    story_id = get_user_input(message, pattern, invalid_message)
+    story = next((story for story in stories if str(story["id"]) == story_id), None)
     if story:
+        level = story["level"]
+        topic = "Custom" if story["topic"] else None
+        style = "Custom" if story["style"] else None
+        model = model_code_to_text(story["model"])
+        story_jsonstring = load_story(story["id"])["jsonstring"]
+        story["content"] = parse_story_json(story["name"], story_jsonstring)
+        update_header(f" > Level: {level} > Topic: {topic} > Style: {style} > Model: {model}")
         return story
     raise Exception("An error occurred getting saved story.")
 
 
+def parse_story_json(name, jsonstring):
+    sentences = json.loads(jsonstring)
+    content = Story(story_name=name, sentences=[])
+    for sentence in sentences:
+        story_sentence = StorySentence(
+            english=sentence["english"],
+            german=sentence["german"]
+        )
+        content.sentences.append(story_sentence)
+    return content
+
+
+def model_code_to_text(model_code):
+    match model_code:
+        case "gemini-2.5-pro":
+            return "Pro"
+        case "gemini-2.5-flash":
+            return "Flash"
+        case "gemini-2.5-flash-lite":
+            return "Flash-Lite"
+        case _:
+            raise Exception("Unsupported model code.")
+
+
 def get_mode():
+    new_screen()
     message = """What do you want to do?
 
 1. <b>Learn</b> (See English once and get feedback for incorrect answers)
@@ -215,7 +263,7 @@ def get_user_topic():
     invalid_message = "Respond with 1 for yes or 2 for no."
     user_input = get_user_input(message, pattern, invalid_message)
     if user_input == "2":
-        update_header(" > Topic: Default")
+        update_header(" > Topic: None")
         return None
     message = """
 Which topics and/or themes would you like to cover in the session?
@@ -242,7 +290,7 @@ For example:
     invalid_message = "Respond with 1 for yes or 2 for no."
     user_input = get_user_input(message, pattern, invalid_message)
     if user_input == "2":
-        update_header(" > Style: Default")
+        update_header(" > Style: None")
         return None
     message = """
 Which style or genre would you like to request?
@@ -277,6 +325,23 @@ def get_model_choice():
             raise Exception("Unsupported input value for model choice")
 
 
+def save(story):
+    if story["id"] is None:
+        message = """Do you want to save the story?
+
+1. Yes
+2. No"""
+        pattern = r"^[1,2]$"
+        invalid_message = "Respond with 1 or 2."
+        save = get_user_input(message, pattern, invalid_message)
+        if save == "1":
+            with yaspin(text="Saving story") as sp:
+                save_story(story)
+                sp.text = "Story saved"
+                sp.green.ok("✔")
+
+
+
 def get_user_input(message, pattern, invalid_message):
     valid_input = False
     print(message + "\n")
@@ -294,11 +359,11 @@ def validate_input(user_input, pattern, invalid_message):
     return False
 
 
-def conduct_session(story, model, mode):
+def conduct_session(story, mode):
     global story_progress
-    german_sentences = [sentence.german for sentence in story.sentences]
+    german_sentences = [sentence.german for sentence in story["content"].sentences]
     german_story_string = " ".join(german_sentences)
-    for sentence in story.sentences:
+    for sentence in story["content"].sentences:
         if mode == "learn":
             passed = False
             print(f"German:  {sentence.german}")
@@ -312,7 +377,7 @@ def conduct_session(story, model, mode):
                 while not valid:
                     answer = input("\nRepeat:  ")
                     valid = answer_validation(answer, sentence.english)
-                feedback = check_answer(sentence.german, answer, german_story_string, model)
+                feedback = check_answer(sentence.german, answer, german_story_string, story["model"])
                 if feedback.correct:
                     print("\033[32mCorrect!\033[0m")
                     passed = True
@@ -331,13 +396,13 @@ def conduct_session(story, model, mode):
             while not valid:
                 answer = input("\nEnglish: ")
                 valid = answer_validation(answer, sentence.english)
-            feedback = check_answer(sentence.german, answer, german_story_string, model)
+            feedback = check_answer(sentence.german, answer, german_story_string, story["model"])
             if feedback.correct:
                 print("\033[32mCorrect!\033[0m\n")
                 passed = True
             else:
                 print("\033[31mIncorrect.\033[0m\n")
-                if spec["mode"] == "practice":
+                if mode == "practice" or mode == "learn":
                     print(feedback.feedback, "\n")
             if passed:
                 story_progress.append(sentence.german)
