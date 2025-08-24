@@ -1,6 +1,6 @@
 # Kumpel
 
-An LLM-assisted flashcard-based German language learning utility.
+An LLM-assisted German language learning utility.
 
 This project utilizes the Google Generative Language API (Gemini API). You need your own API key and running the program may incur costs.
 
