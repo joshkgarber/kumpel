@@ -41,14 +41,27 @@ class Feedback(BaseModel):
     feedback: str
 
 
+# Logo
+logo = """
+ _  __                          _
+| |/ /   _ _ __ ___  _ __   ___| |
+| ' / | | | '_ ` _ \| '_ \ / _ \ |
+| . \ |_| | | | | | | |_) |  __/ |
+|_|\_\__,_|_| |_| |_| .__/ \___|_|
+                    |_|
+"""
+
+
 # Header display
-arrow = stylize(Color.YELLOW, " > ", Style.BOLD)
-header = stylize(Color.YELLOW, "> ", Style.BOLD)
+arrow = stylize(Color.YELLOW, "  ", Style.BOLD)
+header = stylize(Color.YELLOW, " ", Style.BOLD)
+story_length = 0
 story_progress = []
 
 
 def main():
     global api_key
+    global story_length
     load_dotenv()
     api_key = os.environ.get("KUMPEL_GEMINI_API_KEY")
     if not api_key:
@@ -56,17 +69,16 @@ def main():
     try:
         update_header(stylize(Color.CYAN, "Start"))
         new_screen()
-        print("Hello from Kumpel!\n")
+        print(stylize(Color.BLUE, logo, Style.BOLD))
         story = get_story()
-        update_header(arrow)
-        update_header(stylize(Color.CYAN, "Story: "))
-        update_header(story['content'].story_name)
+        story_length = len(story["content"].sentences)
+        update_header(arrow + stylize(Color.CYAN, "Story: ") + story['content'].story_name)
         mode = get_mode()
         new_screen()
         conduct_session(story, mode)
         new_screen()
         save(story)
-        print(f"I hope you enjoyed the story! Goodbye!")
+        print(stylize(Color.MAGENTA, "I hope you enjoyed the story! Goodbye!\n"))
     except KeyboardInterrupt:
         os.system("clear")
         print("Goodbye!")
@@ -75,14 +87,15 @@ def main():
 
 def new_screen():
     global header
+    global story_length
     global story_progress
     os.system("clear")
     print(header, "\n")
     if len(story_progress) > 0:
-        print(stylize(Color.YELLOW, "Progress", Style.UNDERLINE))
+        print(stylize(Color.YELLOW, "Progress", Style.UNDERLINE) + stylize(Color.YELLOW, f" ({len(story_progress)}/{story_length})"))
         for sentence in story_progress:
             print(sentence)
-        print("\n")
+        print()
 
 
 def update_header(update):
@@ -96,10 +109,10 @@ def get_story():
 
     stories = load_stories()
     if not stories:
-        print("You have no saved stories. Let's generate a story.\n")
+        print(stylize(Color.MAGENTA, "You have no saved stories. Let's generate a story.\n"))
         input("Hit Enter to proceed.")
     else:
-        message = """What do you want to do?
+        message = f"""{stylize(Color.MAGENTA, "What do you want to do?")}
 
 1. Use a saved story.
 2. Generate a new story.
@@ -132,7 +145,7 @@ def print_saved_stories(stories):
     table = Texttable()
     table.set_cols_align(["c", "l", "c", "l", "l", "c"])
     table.set_cols_valign(["t", "t", "t", "t", "t", "t"])
-    table.set_deco(Texttable.HEADER)
+    table.set_deco(Texttable.BORDER | Texttable.HEADER | Texttable.HLINES)
     table.set_cols_dtype(["t", "t", "t", "t", "t", "t"])
     for story in saved_stories:
         if story["level"] == "complete beginner":
@@ -142,7 +155,10 @@ def print_saved_stories(stories):
     headers = ["ID"] + [header.capitalize() for header in headers[1:]]
     data = [headers] + [list(story.values()) for story in saved_stories]
     table.add_rows(data)
+    print(stylize(Color.BLUE, "Saved Stories", Style.BOLD))
+    print("\033[34m")
     print(table.draw(), "\n")
+    print("\033[0m", end="")
 
 
 def get_saved_story(stories):
@@ -150,7 +166,7 @@ def get_saved_story(stories):
     new_screen()
     print_saved_stories(stories)
     story_ids = [str(story["id"]) for story in stories]
-    message = """Which story would you like to use?
+    message = f"""{stylize(Color.MAGENTA, "Which story would you like to use?")}
 
 Respond with the story ID."""
     id_string = ", ".join(story_ids)
@@ -159,6 +175,8 @@ Respond with the story ID."""
     story_id = get_user_input(message, pattern, invalid_message)
     story = next((story for story in stories if str(story["id"]) == story_id), None)
     if story:
+        new_screen()
+        print(f"{stylize(Color.GREEN, '✔ Loaded story:')} {story['name']}\n")
         level = story["level"]
         topic = "Custom" if story["topic"] else "None"
         style = "Custom" if story["style"] else "None"
@@ -204,8 +222,7 @@ def model_code_to_text(model_code):
 
 
 def get_mode():
-    new_screen()
-    message = f"""What do you want to do?
+    message = f"""{stylize(Color.MAGENTA, "What do you want to do?")}
 
 {stylize(Color.MAGENTA, "1. Learn", Style.BOLD)} (See English once and get feedback for incorrect answers)
 
@@ -232,7 +249,7 @@ Respond with the number for your selection."""
 
 
 def get_german_level():
-    message = """Choose a level of German.\n
+    message = f"""{stylize(Color.MAGENTA, "Choose a level of German.")}\n
 1. Beginner
 2. A1
 3. A2
@@ -272,9 +289,9 @@ Respond with the number for your selection."""
 
 
 def get_user_topic():
-    message = """Are there any particular topics or themes you would like to focus on?\n
-1. Yes -> I'll decide.
-2. No -> the LLM can decide."""
+    message = f"""{stylize(Color.MAGENTA, "Are there any particular topics or themes you would like to focus on?")}\n
+{stylize(Color.GREEN, "1. Yes 󰁕")} I'll decide.
+{stylize(Color.RED, "2. No 󰁕")} the LLM can decide."""
     pattern = r"^[1, 2]$"
     invalid_message = "Respond with 1 for yes or 2 for no."
     user_input = get_user_input(message, pattern, invalid_message)
@@ -282,8 +299,8 @@ def get_user_topic():
     if user_input == "2":
         update_header("None")
         return None
-    message = """
-Which topics and/or themes would you like to cover in the session?
+    message = f"""
+{stylize(Color.MAGENTA, "Which topics and/or themes would you like to cover in the session?")}
 
 Respond in one line (140 characters max)."""
     pattern = r"^.{1,140}$"
@@ -294,15 +311,15 @@ Respond in one line (140 characters max)."""
 
 
 def get_particular_style():
-    message = """Is there any particular style or genre you would like the text be in?\n
+    message = f"""{stylize(Color.MAGENTA, "Is there any particular style or genre you would like the text be in?")}\n
 For example:
 - Casual/everyday street talk
 - Formal language in a professional setting
 - Sci-Fi, futuristic, and outer-space
 - Medieval fairytales and poetry
 - Ancient mythology and biblical\n
-1. Yes -> I'll decide.
-2. No -> the LLM can decide."""
+{stylize(Color.GREEN, "1. Yes 󰁕")} I'll decide.
+{stylize(Color.RED, "2. No 󰁕")} the LLM can decide."""
     pattern = r"^[1,2]$"
     invalid_message = "Respond with 1 for yes or 2 for no."
     user_input = get_user_input(message, pattern, invalid_message)
@@ -310,8 +327,8 @@ For example:
     if user_input == "2":
         update_header("None")
         return None
-    message = """
-Which style or genre would you like to request?
+    message = f"""
+{stylize(Color.MAGENTA, "Which style or genre would you like to request?")}
 
 Respond in one line (140 characters max)."""
     pattern = r"^.{1,140}$"
@@ -322,7 +339,7 @@ Respond in one line (140 characters max)."""
 
 
 def get_model_choice():
-    message = """Which model would you like to use?\n
+    message = f"""{stylize(Color.MAGENTA, "Which model would you like to use?")}\n
 1. Gemini 2.5 Flash (Recommended)
 2. Gemini 2.5 Flash-Lite
 3. Gemini 2.5 Pro"""
@@ -346,18 +363,20 @@ def get_model_choice():
 
 def save(story):
     if story["id"] is None:
-        message = """Do you want to save the story?
+        message = f"""Do you want to save the story?
 
-1. Yes
-2. No"""
+{stylize(Color.GREEN, "1. Yes")}
+{stylize(Color.RED, "2. No")}"""
         pattern = r"^[1,2]$"
         invalid_message = "Respond with 1 or 2."
         save = get_user_input(message, pattern, invalid_message)
+        print()
         if save == "1":
             with yaspin(text="Saving story") as sp:
                 save_story(story)
                 sp.text = "Story saved"
                 sp.green.ok("✔")
+                print()
 
 
 
@@ -385,22 +404,23 @@ def conduct_session(story, mode):
     for sentence in story["content"].sentences:
         if mode == "learn":
             passed = False
-            print(f"German:  {sentence.german}")
+            print(stylize(Color.BLUE, "German: ", Style.BOLD), sentence.german)
             print()
-            input("Read the sentence. Then hit Enter for the translation. ")
+            input(stylize(Color.MAGENTA, "Read the sentence.", Style.BOLD) + " Then hit Enter for the translation. ")
             new_screen()
-            print(f"German:  {sentence.german}")
-            print(f"\nEnglish: {sentence.english}")
+            print(stylize(Color.BLUE, "German: ", Style.BOLD), sentence.german)
+            print()
+            print(stylize(Color.BLUE, "English:", Style.BOLD), sentence.english)
             while not passed:
                 valid = False
                 while not valid:
-                    answer = input("\nRepeat:  ")
+                    print()
+                    answer = input(stylize(Color.MAGENTA, "Repeat:  ", Style.BOLD))
                     valid = answer_validation(answer, sentence.english)
                 feedback = check_answer(sentence.german, answer, german_story_string, story["model"])
                 if feedback.correct:
                     passed = True
                 else:
-                    # print("\033[31mIncorrect.\033[0m\n")
                     print(feedback.feedback)
                 if passed:
                     input("\nHit Enter to proceed. ")
@@ -408,23 +428,24 @@ def conduct_session(story, mode):
                     print("\nTry again!")
             new_screen()
         passed = False
-        print(f"German:  {sentence.german}")
+        print(stylize(Color.BLUE, "German: ", Style.BOLD), sentence.german)
         while not passed:
             valid = False
             while not valid:
-                answer = input("\nEnglish: ")
+                print()
+                answer = input(stylize(Color.BLUE, 'English: ', Style.BOLD))
                 valid = answer_validation(answer, sentence.english)
             feedback = check_answer(sentence.german, answer, german_story_string, story["model"])
             if feedback.correct:
                 passed = True
             else:
                 if mode == "practice" or mode == "learn":
-                    print(feedback.feedback, "\n")
+                    print(feedback.feedback)
             if passed:
                 story_progress.append(sentence.german)
-                input("Hit Enter to proceed. ")
+                input("\nHit Enter to proceed. ")
             else:
-                print("Try again.")
+                print("\nTry again.")
         new_screen()
 
 
@@ -446,7 +467,7 @@ def generate_story(level, topic, style, model):
             story: Story = gemini_response.parsed
             if isinstance(story, Story):
                 validated = True
-                sp.text = "Generated story"
+                sp.text = f"{stylize(Color.GREEN, 'Generated story:')} {story.story_name}"
                 sp.green.ok("✔")
                 print()
             else:
