@@ -35,3 +35,4 @@ The following Python packages will be installed automatically into a new venv:
 2. Clone the repository: `git clone https://github.com/joshkgarber/kumpel.git`
 3. Create a `.env` file for the API key containing `KUMPEL_GEMINI_API_KEY="your_api_key"`
 4. Run the program with `uv run main.py`
+5. Continue by following the prompts in the program.
