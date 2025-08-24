@@ -2,7 +2,7 @@ from enum import Enum
 
 
 class Style(Enum):
-    NONE = "0"
+    PLAIN = "0"
     BOLD = "1"
     ITALIC = "3"
     UNDERLINE = "4"
@@ -17,7 +17,7 @@ class Color(Enum):
     CYAN = "36"
 
 
-def stylize(style, color, content):
+def stylize(color, content, style=Style.PLAIN):
     style_code = style.value
     color_code = color.value
     return f"\033[{style_code};{color_code}m{content}\033[0m"

@@ -42,7 +42,8 @@ class Feedback(BaseModel):
 
 
 # Header display
-header = stylize(Style.BOLD, Color.YELLOW, "> Start")
+arrow = stylize(Color.YELLOW, " > ", Style.BOLD)
+header = stylize(Color.YELLOW, "> ", Style.BOLD)
 story_progress = []
 
 
@@ -53,10 +54,13 @@ def main():
     if not api_key:
         raise ValueError("Missing API key. Add KUMPEL_GEMINI_API_KEY to kumpel/.env e.g. KUMPEL_GEMINI_API_KEY=your_api_key")
     try:
+        update_header(stylize(Color.CYAN, "Start"))
         new_screen()
         print("Hello from Kumpel!\n")
         story = get_story()
-        update_header(f" > Story: {story['content'].story_name}")
+        update_header(arrow)
+        update_header(stylize(Color.CYAN, "Story: "))
+        update_header(story['content'].story_name)
         mode = get_mode()
         new_screen()
         conduct_session(story, mode)
@@ -75,9 +79,9 @@ def new_screen():
     os.system("clear")
     print(header, "\n")
     if len(story_progress) > 0:
-        print("Progress: ", end="")
+        print(stylize(Color.YELLOW, "Progress", Style.UNDERLINE))
         for sentence in story_progress:
-            print(sentence, end=" ")
+            print(sentence)
         print("\n")
 
 
@@ -107,7 +111,7 @@ Respond with the number for your selection."""
         if source == "1":
             return get_saved_story(stories)
 
-    update_header(" > Generate story")
+    update_header(arrow + stylize(Color.CYAN, "Generate story"))
     new_screen()
     level = get_german_level()
     new_screen()
@@ -142,7 +146,7 @@ def print_saved_stories(stories):
 
 
 def get_saved_story(stories):
-    update_header(" > Load Story")
+    update_header(arrow + stylize(Color.CYAN, "Load story"))
     new_screen()
     print_saved_stories(stories)
     story_ids = [str(story["id"]) for story in stories]
@@ -156,12 +160,21 @@ Respond with the story ID."""
     story = next((story for story in stories if str(story["id"]) == story_id), None)
     if story:
         level = story["level"]
-        topic = "Custom" if story["topic"] else None
-        style = "Custom" if story["style"] else None
+        topic = "Custom" if story["topic"] else "None"
+        style = "Custom" if story["style"] else "None"
         model = model_code_to_text(story["model"])
         story_jsonstring = load_story(story["id"])["jsonstring"]
         story["content"] = parse_story_json(story["name"], story_jsonstring)
-        update_header(f" > Level: {level} > Topic: {topic} > Style: {style} > Model: {model}")
+        update_header(
+            arrow +
+            stylize(Color.CYAN, "Level: ") + level +
+            arrow +
+            stylize(Color.CYAN, "Topic: ") + topic +
+            arrow +
+            stylize(Color.CYAN, "Style: ") + style +
+            arrow +
+            stylize(Color.CYAN, "Model: ") + model
+        )
         return story
     raise Exception("An error occurred getting saved story.")
 
@@ -192,11 +205,13 @@ def model_code_to_text(model_code):
 
 def get_mode():
     new_screen()
-    message = """What do you want to do?
+    message = f"""What do you want to do?
 
-1. <b>Learn</b> (See English once and get feedback for incorrect answers)
-2. <b>Practice</b> (No English given. Get feedback for incorrect answers)
-3. <b>Test</b> (No English and no feedback)
+{stylize(Color.MAGENTA, "1. Learn", Style.BOLD)} (See English once and get feedback for incorrect answers)
+
+{stylize(Color.MAGENTA, "2. Practice", Style.BOLD)} (No English given. Get feedback for incorrect answers)
+
+{stylize(Color.MAGENTA, "3. Test", Style.BOLD)} (No English and no feedback)
 
 Respond with the number for your selection."""
     pattern = r"^[1,2,3]$"
@@ -204,13 +219,13 @@ Respond with the number for your selection."""
     level = get_user_input(message, pattern, invalid_message)
     match level:
         case "1":
-            update_header(" > Mode: Learn")
+            update_header(arrow + stylize(Color.CYAN, "Mode: ") + "Learn")
             return "learn"
         case "2":
-            update_header(" > Mode: Practice")
+            update_header(arrow + stylize(Color.CYAN, "Mode: ") + "Practice")
             return "practice"
         case "3":
-            update_header(" > Mode: Test")
+            update_header(arrow + stylize(Color.CYAN, "Mode: ") + "Test")
             return "test"
         case _:
             raise Exception("Unsupported input value for mode")
@@ -229,27 +244,28 @@ Respond with the number for your selection."""
     pattern = r"^[1,2,3,4,5,6,7]$"
     invalid_message = "Answer must be a number from 1 to 7."
     level = get_user_input(message, pattern, invalid_message)
+    update_header(arrow + stylize(Color.CYAN, "Level: "))
     match level:
         case "1":
-            update_header(" > Level: Beginner")
+            update_header("Beginner")
             return "complete beginner"
         case "2":
-            update_header(" > Level: A1")
+            update_header("A1")
             return "A1"
         case "3":
-            update_header(" > Level: A2")
+            update_header("A2")
             return "A2"
         case "4":
-            update_header(" > Level: B1")
+            update_header("B1")
             return "B1"
         case "5":
-            update_header(" > Level: B2")
+            update_header("B2")
             return "B2"
         case "6":
-            update_header(" > Level: C1")
+            update_header("C1")
             return "C1"
         case "7":
-            update_header(" > Level: C2")
+            update_header("C2")
             return "C2"
         case _:
             raise Exception("Unsupported input value for German level")
@@ -262,8 +278,9 @@ def get_user_topic():
     pattern = r"^[1, 2]$"
     invalid_message = "Respond with 1 for yes or 2 for no."
     user_input = get_user_input(message, pattern, invalid_message)
+    update_header(arrow + stylize(Color.CYAN, "Topic: "))
     if user_input == "2":
-        update_header(" > Topic: None")
+        update_header("None")
         return None
     message = """
 Which topics and/or themes would you like to cover in the session?
@@ -272,7 +289,7 @@ Respond in one line (140 characters max)."""
     pattern = r"^.{1,140}$"
     invalid_message = "Your answer must be in one line and 1 to 140 characters long."
     user_input = get_user_input(message, pattern, invalid_message)
-    update_header(" > Topic: Custom")
+    update_header("Custom")
     return user_input
 
 
@@ -289,8 +306,9 @@ For example:
     pattern = r"^[1,2]$"
     invalid_message = "Respond with 1 for yes or 2 for no."
     user_input = get_user_input(message, pattern, invalid_message)
+    update_header(arrow + stylize(Color.CYAN, "Style: "))
     if user_input == "2":
-        update_header(" > Style: None")
+        update_header("None")
         return None
     message = """
 Which style or genre would you like to request?
@@ -299,7 +317,7 @@ Respond in one line (140 characters max)."""
     pattern = r"^.{1,140}$"
     invalid_message = "Your answer must be in one line and 1 to 140 characters long."
     user_input = get_user_input(message, pattern, invalid_message)
-    update_header(" > Style: Custom")
+    update_header("Custom")
     return user_input
 
 
@@ -311,15 +329,16 @@ def get_model_choice():
     pattern = r"^[1,2,3]$"
     invalid_message = "Respond with 1, 2, or 3."
     model_choice = get_user_input(message, pattern, invalid_message)
+    update_header(arrow + stylize(Color.CYAN, "Model: "))
     match model_choice:
         case "1":
-            update_header(" > Model: Flash")
+            update_header("Flash")
             return "gemini-2.5-flash"
         case "2":
-            update_header(" > Model: Flash Lite")
+            update_header("Flash Lite")
             return "gemini-2.5-flash-lite"
         case "3":
-            update_header(" > Model: Pro")
+            update_header("Pro")
             return "gemini-2.5-pro"
         case _:
             raise Exception("Unsupported input value for model choice")
@@ -379,10 +398,9 @@ def conduct_session(story, mode):
                     valid = answer_validation(answer, sentence.english)
                 feedback = check_answer(sentence.german, answer, german_story_string, story["model"])
                 if feedback.correct:
-                    print("\033[32mCorrect!\033[0m")
                     passed = True
                 else:
-                    print("\033[31mIncorrect.\033[0m\n")
+                    # print("\033[31mIncorrect.\033[0m\n")
                     print(feedback.feedback)
                 if passed:
                     input("\nHit Enter to proceed. ")
@@ -398,10 +416,8 @@ def conduct_session(story, mode):
                 valid = answer_validation(answer, sentence.english)
             feedback = check_answer(sentence.german, answer, german_story_string, story["model"])
             if feedback.correct:
-                print("\033[32mCorrect!\033[0m\n")
                 passed = True
             else:
-                print("\033[31mIncorrect.\033[0m\n")
                 if mode == "practice" or mode == "learn":
                     print(feedback.feedback, "\n")
             if passed:
@@ -501,7 +517,12 @@ For context: the sentence comes from this text:
             feedback: Feedback = gemini_response.parsed
             if isinstance(feedback, Feedback):
                 validated = True
-                sp.text = ""
+                if feedback.correct:
+                    sp.text = stylize(Color.GREEN, "Correct!", Style.BOLD)
+                    sp.green.ok("✔")
+                else:
+                    sp.text = stylize(Color.RED, "Incorrect.", Style.BOLD)
+                    sp.red.fail("✘")
             else:
                 retry_count += 1
                 if retry_count < MAX_RETRIES:
