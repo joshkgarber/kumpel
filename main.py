@@ -20,7 +20,7 @@ api_key = None
 
 # Gemini API retry config
 MAX_RETRIES = 5
-INITIAL_DELAY_SECONDS = 2
+INITIAL_DELAY_SECONDS = 15
 
 
 # Gemini response schema
