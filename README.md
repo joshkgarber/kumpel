@@ -2,7 +2,7 @@
 
 An LLM-assisted German language learning utility.
 
-This project utilizes the Google Generative Language API (Gemini API). You need your own API key and running the program may incur costs. (See Gemini API Costs below for instructions on how to run it for free (probably).)
+This project utilizes the Google Generative Language API (Gemini API). You need your own API key and running the program may incur costs. (See [below](https://github.com/joshkgarber/kumpel?tab=readme-ov-file#run-a-probably-free-sample) for instructions on how to run it for free (probably).)
 
 ## What is Kumpel?
 
