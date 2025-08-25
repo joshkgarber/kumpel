@@ -10,7 +10,7 @@ Kumpel is a terminal-based program which helps you to understand written German 
 
 ## Why use Kumpel?
 
-Use Kumpel if you want to learn German for the purpose of reading German texts. For example, if you don't live in Germany (or any other German-speaking country) and you want to enjoy reading German texts, you don't need to learn how to write, speak or listen to German - only how to read it. So use Kumpel to focus solely on the reading aspect of German learning.
+Use Kumpel if you want to learn German for the purpose of reading German texts. For example, if you don't live in Germany (or Austria or Switzerland) and you want to enjoy reading German texts, you don't need to learn how to write, speak or listen to German - only how to read it. So use Kumpel to focus solely on the reading aspect of German learning.
 
 ## Quickstart
 
