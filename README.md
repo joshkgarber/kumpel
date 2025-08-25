@@ -53,7 +53,7 @@ The Gemini API is called only after come configuration steps in the program. The
 - Model: Gemini 2.5 Flash-Lite
 - Mode: Learn (assuming you don't speak German, otherwise Test)
 
-### API Calls and Free Tier Rate Limits
+#### API Calls and Free Tier Rate Limits
 
 The first Gemini API call is made after you choose the model. This is the call that generates the story for the session. Subsequent requests to the Gemini API are make every time you attempt a translation. In Learn mode, there will be 3 to 5+ API calls per sentence. In Test mode 2 to 4+. It's a range because getting a translation wrong triggers an API call and sometimes Gemini doesn't accept its own translation.
 
