@@ -65,4 +65,4 @@ The RPM limit for the Flash-Lite Free Tier is 15 requests per minute. Best case 
 
 ### Cost Estimate with Billing
 
-If you enjoyed the sample and want to use the program regularly, you might want to connect it to a billing account so that you don't run into free tier rate limits. A convervative (i.e. rounded up) cost estimate of a session including story generation is USD 0.10. Please note: This is a rough estimate which I am guessing based on the costs incurred while creating the program. Later I'll provide a more useful and accurate breakdown of cost estimates measured in input/output tokens.
+If you enjoyed the sample and want to use the program regularly, you might want to connect it to a billing account so that you don't run into free tier rate limits. Later I'll provide a useful and accurate breakdown of cost estimates measured in input/output tokens.
