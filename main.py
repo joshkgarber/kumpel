@@ -169,8 +169,8 @@ def get_saved_story(stories):
     message = f"""{stylize(Color.MAGENTA, "Which story would you like to use?")}
 
 Respond with the story ID."""
-    id_string = ", ".join(story_ids)
-    pattern = rf"^[{id_string}]$"
+    id_string = "|".join(story_ids)
+    pattern = rf"^({id_string})$"
     invalid_message = "Answer must be one of the story IDs."
     story_id = get_user_input(message, pattern, invalid_message)
     story = next((story for story in stories if str(story["id"]) == story_id), None)
