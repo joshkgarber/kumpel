@@ -4,6 +4,7 @@ import time
 import re
 import copy
 import json
+import random
 from db import DB, init_db, load_stories, load_story, save_story
 from ansitext import Style, Color, stylize
 from texttable import Texttable
@@ -417,7 +418,7 @@ def conduct_session(story, mode):
                     print()
                     answer = input(stylize(Color.MAGENTA, "Repeat:  ", Style.BOLD))
                     valid = answer_validation(answer, sentence.english)
-                feedback = check_answer(sentence.german, answer, german_story_string, story["model"])
+                feedback = check_answer(sentence.german, sentence.english, answer, german_story_string, story["model"])
                 if feedback.correct:
                     passed = True
                 else:
@@ -435,7 +436,7 @@ def conduct_session(story, mode):
                 print()
                 answer = input(stylize(Color.BLUE, 'English: ', Style.BOLD))
                 valid = answer_validation(answer, sentence.english)
-            feedback = check_answer(sentence.german, answer, german_story_string, story["model"])
+            feedback = check_answer(sentence.german, sentence.english, answer, german_story_string, story["model"])
             if feedback.correct:
                 passed = True
             else:
@@ -515,9 +516,16 @@ def answer_validation(answer, english):
         return True
 
 
-def check_answer(german, english, story, model):
+def check_answer(german, english, answer, story, model):
     print()
     with yaspin(text="Checking answer") as sp:
+        if answer == english:
+            s = random.uniform(0.65, 1.35)
+            time.sleep(s)
+            feedback = Feedback(correct=True, feedback="")
+            sp.text = stylize(Color.GREEN, "Correct!", Style.BOLD)
+            sp.green.ok("✔")
+            return feedback
         system_instruction = f"""
 You are a German tutor. Your purpose is to check the user's translation of a sentence.
 Provide friendly feedback in English (max 25 words) if the translation is incorrect.
@@ -529,7 +537,7 @@ For context: the sentence comes from this text:
             response_mime_type="application/json",
             response_schema=Feedback,
         )
-        contents = f"Here is the sentence I am attempting to translate: {german}.\nHere is my translation: {english}\nPlease check my translation and give me your feedback."
+        contents = f"Here is the sentence I am attempting to translate: {german}.\nHere is my translation: {answer}\nPlease check my translation and give me your feedback."
         validated = False
         retry_count = 0
         delay = INITIAL_DELAY_SECONDS
