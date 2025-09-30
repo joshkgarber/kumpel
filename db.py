@@ -2,7 +2,7 @@ import sqlite3
 import json
 
 
-DB = 'story.sqlite'
+DB = "story.sqlite"
 
 
 def dict_factory(cursor, row):
@@ -21,14 +21,27 @@ def init_db():
     db.executescript("""
 BEGIN;
 DROP TABLE IF EXISTS story;
+DROP TABLE IF EXISTS sentence;
+DROP TABLE IF EXISTS cache;
 CREATE TABLE story (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     level TEXT NOT NULL,
     topic TEXT,
     style TEXT,
-    model TEXT,
-    jsonstring TEXT NOT NULL
+    model TEXT
+);
+CREATE TABLE sentence (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    story_id INTEGER NOT NULL,
+    content TEXT NOT NULL,
+    FOREIGN KEY (story_id) REFERENCES story (id)
+);
+CREATE TABLE cache (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    sentence_id INTEGER NOT NULL,
+    answer TEXT NOT NULL,
+    FOREIGN KEY (sentence_id)REFERENCES sentence (id)
 );
 COMMIT;
     """)
@@ -44,23 +57,30 @@ def load_stories():
 
 def load_story(story_id):
     db = get_db()
-    story = db.execute("SELECT jsonstring FROM story WHERE id = ?", (story_id,)).fetchone()
+    sentences = db.execute("SELECT content FROM sentence WHERE story_id = ?", (story_id,)).fetchall()
     db.close()
-    return story
+    return sentences
 
 
 def save_story(story):
     story_name = story["content"].story_name
+    db = get_db()
+    cur = db.cursor()
+    cur.execute(
+        "INSERT INTO story (name, level, topic, style, model)"
+        " VALUES (?, ?, ?, ?, ?)",
+        (story_name, story["level"], story["topic"], story["style"], story["model"])
+    )
+    story_id = cur.lastrowid
     story_sentences = story["content"].sentences
     content = []
     for sentence in story_sentences:
-        content.append(dict(german=sentence.german, english=sentence.english))
-    jsonstring = json.dumps(content)
-    db = get_db()
-    db.execute(
-        "INSERT INTO story (name, level, topic, style, model, jsonstring)"
-        " VALUES (?, ?, ?, ?, ?, ?)",
-        (story_name, story["level"], story["topic"], story["style"], story["model"], jsonstring)
+        content.append([story_id, sentence.english])
+        content.append([story_id, sentence.german])
+    cur.executemany(
+        "INSERT INTO sentence (story_id, content)"
+        " VALUES (?, ?)",
+        content
     )
     db.commit()
     db.close()

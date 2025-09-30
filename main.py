@@ -182,8 +182,8 @@ Respond with the story ID."""
         topic = "Custom" if story["topic"] else "None"
         style = "Custom" if story["style"] else "None"
         model = model_code_to_text(story["model"])
-        story_jsonstring = load_story(story["id"])["jsonstring"]
-        story["content"] = parse_story_json(story["name"], story_jsonstring)
+        story_sentences = load_story(story["id"])
+        story["content"] = parse_story_json(story["name"], story_sentences)
         update_header(
             arrow +
             stylize(Color.CYAN, "Level: ") + level +
@@ -198,13 +198,14 @@ Respond with the story ID."""
     raise Exception("An error occurred getting saved story.")
 
 
-def parse_story_json(name, jsonstring):
-    sentences = json.loads(jsonstring)
+def parse_story_json(name, sentences):
     content = Story(story_name=name, sentences=[])
-    for sentence in sentences:
+    ens = sentences[::2]
+    des = sentences[1::2]
+    for i in range(len(ens)):
         story_sentence = StorySentence(
-            english=sentence["english"],
-            german=sentence["german"]
+            english=ens[i]["content"],
+            german=des[i]["content"]
         )
         content.sentences.append(story_sentence)
     return content
