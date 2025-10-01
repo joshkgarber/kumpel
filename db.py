@@ -34,13 +34,14 @@ CREATE TABLE story (
 CREATE TABLE sentence (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     story_id INTEGER NOT NULL,
-    content TEXT NOT NULL,
+    de TEXT NOT NULL,
+    en TEXT NOT NULL,
     FOREIGN KEY (story_id) REFERENCES story (id)
 );
 CREATE TABLE answer (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     sentence_id INTEGER NOT NULL,
-    answer TEXT NOT NULL,
+    content TEXT NOT NULL,
     FOREIGN KEY (sentence_id)REFERENCES sentence (id)
 );
 COMMIT;
@@ -83,3 +84,21 @@ def save_story(story):
     )
     db.commit()
     db.close()
+
+
+def save_answer(sentence_id, answer):
+    db = get_db()
+    db.execute("INSERT INTO answer (sentence_id, content) VALUES (?, ?)", (sentence_id, answer))
+    db.commit()
+    db.close()
+
+
+def check_cache(sentence_id, answer):
+    db = get_db()
+    answers = db.execute(
+        "SELECT id FROM answer"
+        " WHERE sentence_id = ? AND content = ?",
+        (sentence_id, answer)
+    ).fetchone()
+    db.close()
+    return answers

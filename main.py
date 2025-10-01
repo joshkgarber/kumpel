@@ -5,7 +5,7 @@ import re
 import copy
 import json
 import random
-from db import DB, init_db, load_stories, load_story, save_story
+from db import DB, init_db, load_stories, load_story, save_story, save_answer, check_cache
 from ansitext import Style, Color, stylize
 from texttable import Texttable
 from dotenv import load_dotenv
@@ -28,6 +28,7 @@ INITIAL_DELAY_SECONDS = 15
 class StorySentence(BaseModel):
     id: int
     german: str
+    english: str
 
 
 # Gemini response schema
@@ -418,7 +419,7 @@ def conduct_session(story, mode):
                     print()
                     answer = input(stylize(Color.MAGENTA, "Repeat:  ", Style.BOLD))
                     valid = answer_validation(answer, sentence.english)
-                feedback = check_answer(sentence.german, sentence.english, answer, german_story_string, story["model"])
+                feedback = check_answer(sentence, answer, german_story_string, story["model"])
                 if feedback.correct:
                     passed = True
                 else:
@@ -436,7 +437,7 @@ def conduct_session(story, mode):
                 print()
                 answer = input(stylize(Color.BLUE, 'English: ', Style.BOLD))
                 valid = answer_validation(answer, sentence.english)
-            feedback = check_answer(sentence.german, sentence.english, answer, german_story_string, story["model"])
+            feedback = check_answer(sentence, answer, german_story_string, story["model"])
             if feedback.correct:
                 passed = True
             else:
@@ -516,10 +517,18 @@ def answer_validation(answer, english):
         return True
 
 
-def check_answer(german, english, answer, story, model):
+def check_answer(sentence, answer, story, model):
     print()
     with yaspin(text="Checking answer") as sp:
-        if answer == english:
+        if answer == sentence.english:
+            s = random.uniform(0.65, 1.35)
+            time.sleep(s)
+            feedback = Feedback(correct=True, feedback="")
+            sp.text = stylize(Color.GREEN, "Correct!", Style.BOLD)
+            sp.green.ok("✔")
+            return feedback
+        cached_answer = check_cache(sentence.id, answer)
+        if cached_answer:
             s = random.uniform(0.65, 1.35)
             time.sleep(s)
             feedback = Feedback(correct=True, feedback="")
@@ -529,15 +538,13 @@ def check_answer(german, english, answer, story, model):
         system_instruction = f"""
 You are a German tutor. Your purpose is to check the user's translation of a sentence.
 Provide friendly feedback in English (max 25 words) if the translation is incorrect.
-Do not provide direct translations in the feedback.
-For context: the sentence comes from this text:
-{story}"""
+Do not provide direct translations in the feedback."""
         config = types.GenerateContentConfig(
             system_instruction=system_instruction,
             response_mime_type="application/json",
             response_schema=Feedback,
         )
-        contents = f"Here is the sentence I am attempting to translate: {german}.\nHere is my translation: {answer}\nPlease check my translation and give me your feedback."
+        contents = f"I am translating this story sentence-by-sentence:\n\n{story}\n\nHere is the sentence I am attempting to translate: {sentence.german}.\nHere is my translation: {answer}\nPlease check my translation and give me your feedback."
         validated = False
         retry_count = 0
         delay = INITIAL_DELAY_SECONDS
@@ -547,6 +554,7 @@ For context: the sentence comes from this text:
             if isinstance(feedback, Feedback):
                 validated = True
                 if feedback.correct:
+                    save_answer(sentence.id, answer)
                     sp.text = stylize(Color.GREEN, "Correct!", Style.BOLD)
                     sp.green.ok("✔")
                 else:
@@ -591,18 +599,18 @@ def get_gemini_response(model, config, contents):
 
             if error_code in [429, 500, 503, 504]:
                 if retry_count < MAX_RETRIES:
-                    print(f"Gemini error (Code: {error_code}). Retrying in {delay} seconds... (Attempt {retry_count}/{MAX_RETRIES})\n")
+                    print(f" Gemini error (Code: {error_code}). Retrying in {delay} seconds... (Attempt {retry_count}/{MAX_RETRIES})\n")
                     time.sleep(delay)
                     delay *= 2
                 else:
-                    print(f"Gemini error (Code: {error_code}). Maximum retries reached.")
+                    print(f" Gemini error (Code: {error_code}). Maximum retries reached.")
             else:
-                print(f"An unrecoverable error occurred: {str(e)}")
+                print(f" An unrecoverable error occurred: {str(e)}")
                 print("Exiting. Goodbye!")
                 sys.exit(1)
 
     if not gemini_success:
-        print("Gemini failed to respond after multiple attempts. Exiting.")
+        print(" Gemini failed to respond after multiple attempts. Exiting.")
         sys.exit(1)
 
     return response
