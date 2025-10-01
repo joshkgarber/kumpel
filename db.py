@@ -37,7 +37,7 @@ CREATE TABLE sentence (
     content TEXT NOT NULL,
     FOREIGN KEY (story_id) REFERENCES story (id)
 );
-CREATE TABLE cache (
+CREATE TABLE answer (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     sentence_id INTEGER NOT NULL,
     answer TEXT NOT NULL,
@@ -57,7 +57,7 @@ def load_stories():
 
 def load_story(story_id):
     db = get_db()
-    sentences = db.execute("SELECT content FROM sentence WHERE story_id = ?", (story_id,)).fetchall()
+    sentences = db.execute("SELECT id, de, en FROM sentence WHERE story_id = ?", (story_id,)).fetchall()
     db.close()
     return sentences
 
@@ -75,11 +75,10 @@ def save_story(story):
     story_sentences = story["content"].sentences
     content = []
     for sentence in story_sentences:
-        content.append([story_id, sentence.english])
-        content.append([story_id, sentence.german])
+        content.append([story_id, sentence.german, sentence.english])
     cur.executemany(
-        "INSERT INTO sentence (story_id, content)"
-        " VALUES (?, ?)",
+        "INSERT INTO sentence (story_id, de, en)"
+        " VALUES (?, ?, ?)",
         content
     )
     db.commit()

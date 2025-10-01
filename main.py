@@ -26,8 +26,8 @@ INITIAL_DELAY_SECONDS = 15
 
 # Gemini response schema
 class StorySentence(BaseModel):
+    id: int
     german: str
-    english: str
 
 
 # Gemini response schema
@@ -183,7 +183,7 @@ Respond with the story ID."""
         style = "Custom" if story["style"] else "None"
         model = model_code_to_text(story["model"])
         story_sentences = load_story(story["id"])
-        story["content"] = parse_story_json(story["name"], story_sentences)
+        story["content"] = parse_story_sentences(story["name"], story_sentences)
         update_header(
             arrow +
             stylize(Color.CYAN, "Level: ") + level +
@@ -198,14 +198,13 @@ Respond with the story ID."""
     raise Exception("An error occurred getting saved story.")
 
 
-def parse_story_json(name, sentences):
+def parse_story_sentences(name, sentences):
     content = Story(story_name=name, sentences=[])
-    ens = sentences[::2]
-    des = sentences[1::2]
-    for i in range(len(ens)):
+    for sen in sentences:
         story_sentence = StorySentence(
-            english=ens[i]["content"],
-            german=des[i]["content"]
+            id=sen["id"],
+            german=sen["de"],
+            english=sen["en"]
         )
         content.sentences.append(story_sentence)
     return content
