@@ -8,3 +8,6 @@ class TestDB(unittest.TestCase):
         sentences = [StorySentence(id=1, german="Hallo!", english="Hello!")]
         story_name = "Test Story"
         story_content = Story(story_name=story_name, sentences=sentences)
+        story = dict(content=story_content, level=1, topic=None, style=None, model="gemini-2.5-flash-lite")
+        save_story(story)
+
