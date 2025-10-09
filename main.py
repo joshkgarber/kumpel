@@ -15,6 +15,57 @@ from google.genai import types
 from yaspin import yaspin
 
 
+import sys
+
+def run_chatbot_cli(input_stream=sys.stdin, output_stream=sys.stdout):
+    """
+    Runs a simple interactive chatbot CLI loop.
+
+    It reads input from input_stream and writes output to output_stream.
+    We use these streams as arguments so they can be easily replaced 
+    by mock objects (like StringIO) during testing.
+    """
+    
+    # Use the passed streams instead of default input()/print() which 
+    # always use sys.stdin and sys.stdout respectively.
+    
+    # Helper to print to the designated output stream
+    def print_output(message, end="\n"):
+        output_stream.write(message + end)
+        
+    print_output("Welcome to the Echo Chatbot! Type 'quit' to exit.")
+    
+    while True:
+        try:
+            # Display prompt
+            print_output("> ", "")
+            
+            # Read line from input stream
+            user_input = input_stream.readline().strip()
+            
+            if not user_input:
+                continue # Ignore empty lines
+            
+            if user_input.lower() == 'quit':
+                print_output("Goodbye!")
+                break
+                
+            # Simple response logic
+            response = f"You said: {user_input.upper()}"
+            print_output(response)
+            
+        except EOFError:
+            # Handle end-of-file, which often happens when piping simulated input
+            break
+        except Exception as e:
+            print_output(f"An error occurred: {e}")
+            break
+
+if __name__ == '__main__':
+    # When run normally, use default streams
+    run_chatbot_cli()
+
+
 # Gemini API key global
 api_key = None
 
@@ -614,7 +665,3 @@ def get_gemini_response(model, config, contents):
         sys.exit(1)
 
     return response
-
-
-if __name__ == "__main__":
-    main()
