@@ -17,7 +17,8 @@ from dotenv import load_dotenv
 from ansitext import Style, Color, stylize
 
 
-# Logo
+# Globals
+## Logo
 logo = """
  _  __                          _
 | |/ /   _ _ __ ___  _ __   ___| |
@@ -27,33 +28,22 @@ logo = """
                     |_|
 """
 
-
-# Initialize Gemini API key global
+## Gemini API key global
 api_key = None
 
-
-# Initialize Gemini API retry config
+## Gemini API retry config
 MAX_RETRIES = 5
 INITIAL_DELAY_SECONDS = 15
 
-
-# Header display config globals
-bc_char = stylize(Color.YELLOW, "  ", Style.BOLD)
-header = stylize(Color.YELLOW, " ", Style.BOLD)
+## Header config
+header = ""
+breadcrumb = stylize(Color.YELLOW, "  ", Style.BOLD)
 story_length = 0
 story_progress = []
 
 
 # Main function
-def run_chatbot_cli(input_stream=sys.stdin, output_stream=sys.stdout):
-
-    # Load Gemini API key
-    global api_key
-    load_dotenv()
-    api_key = os.environ.get("KUMPEL_GEMINI_API_KEY")
-    if not api_key:
-        raise ValueError("Missing API key. Add KUMPEL_GEMINI_API_KEY to kumpel/.env e.g. KUMPEL_GEMINI_API_KEY=your_api_key")
-
+def run_kumpel_cli(input_stream=sys.stdin, output_stream=sys.stdout):
     # Helper functions
     def print_output(message, end="\n"):
         output_stream.write(message + end)
@@ -71,28 +61,37 @@ def run_chatbot_cli(input_stream=sys.stdin, output_stream=sys.stdout):
         match prog_state:
             case "start":
                 content = stylize(Color.BLUE, logo, Style.BOLD) + "\nWelcome to Kumpel!"
+            case "session":
+                print_output(stylize(Color.YELLOW, "Progress", Style.UNDERLINE) + stylize(Color.YELLOW, f" ({len(story_progress)}/{story_length})"))
+                for sentence in story_progress:
+                    print_output(sentence)
+                print_output("")
             case _:
                 raise Exception(f"Unhandled program state: {prog_state}")
         print_output(content)
 
     
-    # Initialize program state
+    # Initialization
+
+    ## Gemini API key
+    global api_key
+    load_dotenv()
+    api_key = os.environ.get("KUMPEL_GEMINI_API_KEY")
+    if not api_key:
+        raise ValueError("Missing API key. Add KUMPEL_GEMINI_API_KEY to kumpel/.env e.g. KUMPEL_GEMINI_API_KEY=your_api_key")
+    
+    ## Program state
     prog_state = "start"
 
+    
+    # Main loop
     while True:
         os.system("clear")
 
         print_header()
         print_content()
 
-        if len(story_progress) > 0:
-            print_output(stylize(Color.YELLOW, "Progress", Style.UNDERLINE) + stylize(Color.YELLOW, f" ({len(story_progress)}/{story_length})"))
-            for sentence in story_progress:
-                print_output(sentence)
-            print_output("")
-
-        # next_screen = get_screen(state)
-        # print_screen(next_screen)
+        # Get user input
         try:
             # Read line from input stream
             user_input = input_stream.readline().strip()
@@ -104,7 +103,7 @@ def run_chatbot_cli(input_stream=sys.stdin, output_stream=sys.stdout):
                 print_output("Goodbye!")
                 break
                 
-            # Simple response logic
+            # Response logic
             response = f"You said: {user_input.upper()}"
             print_output(response)
             
@@ -124,7 +123,7 @@ def update_header(update):
 
 if __name__ == '__main__':
     # When run normally, use default streams
-    run_chatbot_cli()
+    run_kumpel_cli()
 
 
 # Gemini response schema
